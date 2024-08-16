@@ -1,0 +1,24 @@
+---
+title: "TD VI: Inteligencia Artificial - Trabajo práctico 1 (2024 2do semestre)"
+author: "Luca Mazzarello y Camila Migdal"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("rpart")
+install.packages("writexl")
+install.packages("dplyr")
+library("rpart")
+library("writexl")
+library("dplyr")
+```
+
+## Objetivo
+
+El objetivo de este trabajo práctico es que realicen un análisis completo utilizando árboles de decisión en R. El trabajo se presentará en formato R Markdown, integrando código, resultados y explicaciones en un único documento.
+
+Hemos elegido R como lenguaje de programación para este TP por una razón fundamental: queremos que adquieran intuiciones sobre el impacto que tiene en la performance de los modelos el hecho de que el mismo árbol maneje los valores faltantes (NAs). Esta característica está implementada en R, específicamente en la librería **rpart**, pero no está disponible en las implementaciones populares de Python.
+
+El trabajo práctico consiste en generar un archivo R Markdown (.Rmd) que incluya todo el código, análisi s yexplicaciones hechas por ustedes. A continuación, se detalla la estructura que debe tener este archivo.
