@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("rpart.plot")
 #install.packages("caret")
 #install.packages("pROC")
+#install.packages("plotly")
 library(rpart)
 library(writexl)
 library(dplyr)
@@ -21,6 +22,7 @@ library(ggplot2)
 library(rpart.plot)
 library(caret)
 library(pROC)
+library(plotly)
 ```
 
 ## Objetivo
@@ -150,9 +152,10 @@ val_data <- fumadores_50[val_indices, ]
 test_data <- fumadores_50[test_indices, ]
 
 # Arbol
+
 # control_params <- rpart.control(minsplit = 20, minbucket = round(20/3), cp = 0.001, xval = 10, maxdepth = 30)
 
-arbol <- rpart(formula = DRK_YN ~ age + height + weight + waistline + SBP + LDL_chole + triglyceride + hemoglobin + urine_protein,
+arbol_1 <- rpart(formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
                data = train_data, method = "class", control = control_params)
 
 rpart.plot(arbol)
@@ -218,5 +221,228 @@ cat("AUC-ROC: ", auc_value, "\n")
 
 ```
 
-# Oprimizacion del modelo
-```{r pressure, echo=FALS
+# Optimización del modelo
+```{r pressure, echo=FALSE}
+maxdepth_values <- c(5, 10, 15, 20, 25, 30)
+minsplit_values <- c(2, 5, 10, 15, 20, 25, 30, 40, 50)
+minbucket_values <- c(1, 3, 5, 7, 10, 15, 20, 25, 30)
+
+total_combinations <- length(maxdepth_values) * length(minsplit_values) * length(minbucket_values)
+
+pb <- txtProgressBar(min = 0, max = total_combinations, style = 3)
+
+progress_counter <- 0
+
+results <- data.frame(maxdepth = integer(), minsplit = integer(), minbucket = integer(), AUC = numeric())
+
+for (maxdepth in maxdepth_values) {
+  for (minsplit in minsplit_values) {
+    for (minbucket in minbucket_values) {
+      
+      progress_counter <- progress_counter + 1
+      setTxtProgressBar(pb, progress_counter)
+      
+      control_params <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 0, cval = 0, maxdepth = maxdepth)
+      
+      arbol <- rpart(DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+                     data = train_data, method = "class", control = control_params)
+      
+      pred_prob_val <- tryCatch({
+        predict(arbol, newdata = val_data, type = "prob")
+      }, error = function(e) {
+        NULL
+      })
+      
+      if (!is.null(pred_prob_val)) {
+        
+        valid_indices <- !is.na(pred_prob_val[, "Y"]) & !is.nan(pred_prob_val[, "Y"]) & !is.na(val_data$DRK_YN) & !is.nan(val_data$DRK_YN)
+        
+        if (sum(valid_indices) > 0) {
+          pred_prob_val_clean <- pred_prob_val[valid_indices, ]
+          val_data_clean <- val_data[valid_indices, ]
+          
+          roc_curve <- tryCatch({
+            suppressMessages(roc(val_data_clean$DRK_YN, pred_prob_val_clean[, "Y"]))
+          }, error = function(e) {
+            NULL
+          })
+          
+          if (!is.null(roc_curve)) {
+            auc_value <- auc(roc_curve)
+            
+            results <- rbind(results, data.frame(maxdepth = maxdepth, minsplit = minsplit, minbucket = minbucket, AUC = auc_value))
+          }
+        }
+      }
+    }
+  }
+}
+
+# Asegurarse de que la columna AUC sea numérica y filtrar valores problemáticos
+results <- results[!is.na(results$AUC) & !is.nan(results$AUC), ]
+results$AUC <- as.numeric(as.character(results$AUC))
+
+# Identificar el valor máximo de AUC
+max_auc <- max(results$AUC)
+
+# Filtrar todas las filas que tienen el valor máximo de AUC
+best_rows <- results[results$AUC == max_auc, ]
+
+# Mostrar todas las combinaciones que obtuvieron el mejor AUC
+print(best_rows)
+```
+
+## Visualizaciones
+```{r pressure, echo=FALSE}
+# Scatter plot para maxdepth vs AUC
+ggplot(results, aes(x = maxdepth, y = AUC)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) + 
+  labs(title = "Relación entre MaxDepth y AUC", x = "MaxDepth", y = "AUC") +
+  theme_minimal()
+
+# Scatter plot para minsplit vs AUC
+ggplot(results, aes(x = minsplit, y = AUC)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) + 
+  labs(title = "Relación entre MinSplit y AUC", x = "MinSplit", y = "AUC") +
+  theme_minimal()
+
+# Scatter plot para minbucket vs AUC
+ggplot(results, aes(x = minbucket, y = AUC)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) + 
+  labs(title = "Relación entre MinBucket y AUC", x = "MinBucket", y = "AUC") +
+  theme_minimal()
+```
+
+```{r pressure, echo=FALSE}
+# Gráfico de superficie 3D: maxdepth, minsplit, minbucket vs AUC
+fig <- plot_ly(results, x = ~maxdepth, y = ~minsplit, z = ~AUC, color = ~AUC, colors = colorRamp(c("white", "black"))) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'MaxDepth'),
+                      yaxis = list(title = 'MinSplit'),
+                      zaxis = list(title = 'AUC')),
+         title = "Superficie 3D de MaxDepth, MinSplit y AUC")
+
+fig
+```
+
+## AUC-ROC en el conjunto de testeo
+```{r pressure, echo=FALSE}
+best_combination <- best_rows[1, ]
+
+best_tree <- rpart(DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+                   data = train_data, method = "class",
+                   control = rpart.control(minsplit = best_combination$minsplit,
+                                           minbucket = best_combination$minbucket,
+                                           maxdepth = best_combination$maxdepth, 
+                                           cp = 0,
+                                           cval = 0))
+
+pred_prob_test <- predict(best_tree, newdata = test_data, type = "prob")
+
+valid_indices_test <- !is.na(pred_prob_test[, "Y"]) & !is.nan(pred_prob_test[, "Y"]) & !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
+
+# Calcular el AUC-ROC en el conjunto de testeo
+if (sum(valid_indices_test) > 0) {
+  pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
+  test_data_clean <- test_data[valid_indices_test, ]
+  
+  roc_curve_test <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
+  auc_test <- auc(roc_curve_test)
+  
+  # Mostrar el valor de AUC-ROC en el conjunto de testeo
+  cat("AUC-ROC test:", auc_test, "\n")
+} else {
+  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo.\n")
+}
+```
+
+## Comparación
+```{r pressure, echo=FALSE}
+
+# Calcular el AUC-ROC para el árbol básico
+pred_prob_test_1 <- predict(arbol_1, newdata = test_data, type = "prob")
+
+# Filtrar filas válidas (sin NA o NaN)
+valid_indices_test_1 <- !is.na(pred_prob_test_1[, "Y"]) & !is.nan(pred_prob_test_1[, "Y"]) & !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
+
+if (sum(valid_indices_test_1) > 0) {
+  pred_prob_test_clean_1 <- pred_prob_test_1[valid_indices_test_1, ]
+  test_data_clean_1 <- test_data[valid_indices_test_1, ]
+  
+  roc_curve_test_1 <- suppressMessages(roc(test_data_clean_1$DRK_YN, pred_prob_test_clean_1[, "Y"]))
+  auc_test_1 <- auc(roc_curve_test_1)
+  
+  cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
+} else {
+  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol básico).\n")
+}
+
+cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test_opt, "\n")
+```
+
+# Interpretación de resultados
+## Comparar Visualmente los Árboles
+```{r pressure, echo=FALSE}
+# Graficar el árbol básico
+rpart.plot(arbol_1, main = "Árbol Básico")
+
+# Graficar el árbol optimizado
+rpart.plot(best_tree, main = "Árbol Optimizado")
+```
+## Importancia de las variables
+```{r pressure, echo=FALSE}
+# Importancia de las variables para el árbol básico
+importance_basic <- varImp(arbol_1)
+cat("Importancia de las variables en el Árbol Básico:\n")
+print(importance_basic)
+
+# Importancia de las variables para el árbol optimizado
+importance_opt <- varImp(best_tree)
+cat("Importancia de las variables en el Árbol Optimizado:\n")
+print(importance_opt)
+
+```
+## Visualización de la Importancia de las Variables
+```{r pressure, echo=FALSE}
+# Convertir la importancia a un dataframe para graficar
+importance_basic_df <- data.frame(Variable = rownames(importance_basic), Importance = importance_basic[,1])
+importance_opt_df <- data.frame(Variable = rownames(importance_opt), Importance = importance_opt[,1])
+
+# Graficar la importancia de las variables - Árbol Básico
+ggplot(importance_basic_df, aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Importancia de las Variables - Árbol Básico", x = "Variable", y = "Importancia") +
+  theme_minimal()
+
+# Graficar la importancia de las variables - Árbol Optimizado
+ggplot(importance_opt_df, aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "red") +
+  coord_flip() +
+  labs(title = "Importancia de las Variables - Árbol Optimizado", x = "Variable", y = "Importancia") +
+  theme_minimal()
+
+```
+
+```{r pressure, echo=FALSE}
+
+```
+
+```{r pressure, echo=FALSE}
+
+```
+
+```{r pressure, echo=FALSE}
+
+```
+
+```{r pressure, echo=FALSE}
+
+```
+
+```{r pressure, echo=FALSE}
+
+```
