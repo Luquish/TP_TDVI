@@ -59,7 +59,7 @@ El conjunto de datos contiene información sobre características demográficas 
 
 # Problema a Resolver:
 
-El objetivo es desarrollar un modelo predictivo que, basado en las características biométricas y demográficas, determine si una persona es consumidora de alcohol o no.
+El objetivo es desarrollar un modelo predictivo que, basado en las características biométricas, determine si una persona es consumidora de alcohol o no.
 
 # Por qué esta elección
 
@@ -124,7 +124,7 @@ fumadores_50$DRK_YN <- as.factor(fumadores_50$DRK_YN)
 
 ```{r pressure, echo=FALSE}
 # Definir el vector con los nombres de las variables principales
-variables <- c("age", "height", "weight", "waistline", "SBP", "LDL_chole", "triglyceride", "hemoglobin")
+variables <- c("age", "gamma_GTP", "HDL_chole", "waistline", "SBP", "LDL_chole", "triglyceride", "hemoglobin", "SGOT_AST", "SGOT_ALT", "BLDS")
 
 # Seleccionar las variables principales
 variables_principales <- fumadores_50[, variables]
@@ -153,12 +153,12 @@ test_data <- fumadores_50[test_indices, ]
 
 # Arbol
 
-# control_params <- rpart.control(minsplit = 20, minbucket = round(20/3), cp = 0.001, xval = 10, maxdepth = 30)
+control_params <- rpart.control(minsplit = 20, minbucket = round(20/3), cp = 0.001, xval = 10, maxdepth = 30)
 
 arbol_1 <- rpart(formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
                data = train_data, method = "class", control = control_params)
 
-rpart.plot(arbol)
+rpart.plot(arbol_1)
 ```
 # Interpretación del arbol obtenido 
 - Podemos visualizar que
@@ -169,10 +169,10 @@ rpart.plot(arbol)
 ## Predicciones
 ```{r pressure, echo=FALSE}
 # Predecir las probabilidades
-pred_prob <- predict(arbol, newdata = test_data, type = "prob")
+pred_prob <- predict(arbol_1, newdata = test_data, type = "prob")
 
 # Predecir las clases
-pred_class <- predict(arbol, newdata = test_data, type = "class")
+pred_class <- predict(arbol_1, newdata = test_data, type = "class")
 
 head(pred_prob)
 head(pred_class)
@@ -224,8 +224,8 @@ cat("AUC-ROC: ", auc_value, "\n")
 # Optimización del modelo
 ```{r pressure, echo=FALSE}
 maxdepth_values <- c(5, 10, 15, 20, 25, 30)
-minsplit_values <- c(2, 5, 10, 15, 20, 25, 30, 40, 50)
-minbucket_values <- c(1, 3, 5, 7, 10, 15, 20, 25, 30)
+minsplit_values <- c(2, 5, 10, 15, 20)
+minbucket_values <- c(1, 3, 5, 7, 10, 15)
 
 total_combinations <- length(maxdepth_values) * length(minsplit_values) * length(minbucket_values)
 
@@ -316,18 +316,6 @@ ggplot(results, aes(x = minbucket, y = AUC)) +
   theme_minimal()
 ```
 
-```{r pressure, echo=FALSE}
-# Gráfico de superficie 3D: maxdepth, minsplit, minbucket vs AUC
-fig <- plot_ly(results, x = ~maxdepth, y = ~minsplit, z = ~AUC, color = ~AUC, colors = colorRamp(c("white", "black"))) %>%
-  add_markers() %>%
-  layout(scene = list(xaxis = list(title = 'MaxDepth'),
-                      yaxis = list(title = 'MinSplit'),
-                      zaxis = list(title = 'AUC')),
-         title = "Superficie 3D de MaxDepth, MinSplit y AUC")
-
-fig
-```
-
 ## AUC-ROC en el conjunto de testeo
 ```{r pressure, echo=FALSE}
 best_combination <- best_rows[1, ]
@@ -376,11 +364,80 @@ if (sum(valid_indices_test_1) > 0) {
   auc_test_1 <- auc(roc_curve_test_1)
   
   cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
+  } else {
+  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol básico).\n")
+  }
+
+cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test, "\n")
+
+
+```
+
+```{r pressure, echo=FALSE}
+# Función para calcular métricas adicionales
+calculate_metrics <- function(actual, predicted_probs, threshold = 0.5) {
+  predicted_classes <- ifelse(predicted_probs[, "Y"] >= threshold, "Y", "N")
+  
+  # Calcular matriz de confusión
+  confusion_matrix <- confusionMatrix(as.factor(predicted_classes), as.factor(actual))
+  
+  # Extraer métricas
+  accuracy <- confusion_matrix$overall["Accuracy"]
+  precision <- confusion_matrix$byClass["Pos Pred Value"]
+  recall <- confusion_matrix$byClass["Sensitivity"]
+  f1_score <- confusion_matrix$byClass["F1"]
+  
+  return(list(accuracy = accuracy, precision = precision, recall = recall, f1_score = f1_score, confusion_matrix = confusion_matrix))
+}
+
+# Calcular el AUC-ROC y otras métricas para el árbol básico
+pred_prob_test_1 <- predict(arbol_1, newdata = test_data, type = "prob")
+
+# Filtrar filas válidas (sin NA o NaN)
+valid_indices_test_1 <- !is.na(pred_prob_test_1[, "Y"]) & !is.nan(pred_prob_test_1[, "Y"]) & !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
+
+if (sum(valid_indices_test_1) > 0) {
+  pred_prob_test_clean_1 <- pred_prob_test_1[valid_indices_test_1, ]
+  test_data_clean_1 <- test_data[valid_indices_test_1, ]
+  
+  # Calcular AUC-ROC
+  roc_curve_test_1 <- suppressMessages(roc(test_data_clean_1$DRK_YN, pred_prob_test_clean_1[, "Y"]))
+  auc_test_1 <- auc(roc_curve_test_1)
+  cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
+  
+  # Calcular métricas adicionales
+  metrics_basic <- calculate_metrics(test_data_clean_1$DRK_YN, pred_prob_test_clean_1)
+  cat("Precisión (árbol básico):", metrics_basic$accuracy, "\n")
+  cat("Recall (árbol básico):", metrics_basic$recall, "\n")
+  cat("F1-Score (árbol básico):", metrics_basic$f1_score, "\n")
+  cat("Matriz de confusión (árbol básico):\n")
+  print(metrics_basic$confusion_matrix$table)
+  
 } else {
   cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol básico).\n")
 }
 
-cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test_opt, "\n")
+# Calcular AUC-ROC y otras métricas para el árbol optimizado
+if (sum(valid_indices_test) > 0) {
+  pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
+  test_data_clean <- test_data[valid_indices_test, ]
+  
+  # Calcular AUC-ROC
+  roc_curve_test_opt <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
+  auc_test_opt <- auc(roc_curve_test_opt)
+  cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test_opt, "\n")
+  
+  # Calcular métricas adicionales
+  metrics_opt <- calculate_metrics(test_data_clean$DRK_YN, pred_prob_test_clean)
+  cat("Precisión (árbol optimizado):", metrics_opt$accuracy, "\n")
+  cat("Recall (árbol optimizado):", metrics_opt$recall, "\n")
+  cat("F1-Score (árbol optimizado):", metrics_opt$f1_score, "\n")
+  cat("Matriz de confusión (árbol optimizado):\n")
+  print(metrics_opt$confusion_matrix$table)
+  
+} else {
+  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol optimizado).\n")
+}
 ```
 
 # Interpretación de resultados
@@ -434,15 +491,53 @@ ggplot(importance_opt_df, aes(x = reorder(Variable, Importance), y = Importance)
 ```{r pressure, echo=FALSE}
 
 ```
+# 7. Análisis del impacto de los valores faltantes
+```{r pressure, echo=FALSE}
+replace_with_na <- function(df, prob) {
+  df_na <- df
+  n_values <- nrow(df_na) * ncol(df_na)
+  n_na <- floor(prob * n_values)
+  
+  # Obtener una muestra de posiciones para reemplazar con NA
+  na_indices <- sample(seq_len(n_values), size = n_na)
+  
+  # Convertir el índice lineal en índices de fila y columna
+  row_indices <- ((na_indices - 1) %% nrow(df_na)) + 1
+  col_indices <- ((na_indices - 1) %/% nrow(df_na)) + 1
+  
+  # Reemplazar con NA
+  for (i in seq_along(na_indices)) {
+    df_na[row_indices[i], col_indices[i]] <- NA
+  }
+  
+  return(df_na)
+}
+```
 
 ```{r pressure, echo=FALSE}
+# Generar el primer set con 20% de NAs
+train_data_20 <- replace_with_na(train_data, 0.20)
+val_data_20 <- replace_with_na(val_data, 0.20)
+test_data_20 <- replace_with_na(test_data, 0.20)
+
+# Generar el segundo set con 50% de NAs
+train_data_50 <- replace_with_na(train_data, 0.50)
+val_data_50 <- replace_with_na(val_data, 0.50)
+test_data_50 <- replace_with_na(test_data, 0.50)
+
+# Generar el tercer set con 75% de NAs
+train_data_75 <- replace_with_na(train_data, 0.75)
+val_data_75 <- replace_with_na(val_data, 0.75)
+test_data_75 <- replace_with_na(test_data, 0.75)
 
 ```
 
 ```{r pressure, echo=FALSE}
-
+cat("Proporción de NAs en el conjunto de entrenamiento con 20% de reemplazo:", mean(is.na(train_data_20)), "\n")
+cat("Proporción de NAs en el conjunto de validación con 20% de reemplazo:", mean(is.na(val_data_50)), "\n")
+cat("Proporción de NAs en el conjunto de testeo con 20% de reemplazo:", mean(is.na(test_data_75)), "\n")
 ```
 
 ```{r pressure, echo=FALSE}
-
+is.na(train_data_20)
 ```
