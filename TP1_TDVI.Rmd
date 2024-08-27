@@ -23,6 +23,9 @@ library(rpart.plot)
 library(caret)
 library(pROC)
 library(plotly)
+library(reshape2)
+library(scales)
+
 ```
 
 ## Objetivo
@@ -63,10 +66,16 @@ El objetivo es desarrollar un modelo predictivo que, basado en las característi
 
 ## ¿Por qué esta elección?
 
-El conjunto de datos es ideal para el uso de árboles de decisión debido a la combinación de variables numéricas y categóricas, lo que permite capturar interacciones complejas entre características biométricas y de salud sin necesidad de preprocesamiento extenso. Además, los árboles de decisión ofrecen transparencia e interpretabilidad, lo que es crucial en contextos de salud. También manejan de manera efectiva datos faltantes y son robustos frente a outliers, lo que los hace flexibles y adecuados para la clasificación binaria, como en este caso, donde se busca predecir el consumo de alcohol. (CAMBIAR)
+Consideramos que este dataset es adecuado para el uso de árboles de decisión porque incluye tanto variables categóricas (como sex y SMK_stat_type_cd) como numéricas (como age, height, weight, entre otras), lo cual es ideal para este tipo de modelo. Además, la relación entre algunas variables biométricas y el consumo de alcohol puede no ser lineal, y los árboles de decisión son eficaces para manejar este tipo de relaciones complejas.
+
+El dataset también cuenta con variables fuertemente relacionadas con el consumo de alcohol, como SGOT_AST, SGOT_ALT y gamma_GTP. Los árboles de decisión pueden identificar y priorizar las variables más importantes, ayudando a manejar la redundancia de manera eficiente.
+
+Además, los árboles de decisión manejan de manera efectiva los datos faltantes y son robustos frente a outliers, lo que los hace especialmente flexibles y adecuados para la clasificación binaria, como en este caso, donde se busca predecir el consumo de alcohol. Finalmente, la capacidad de los árboles de decisión para visualizar y estructurar los datos facilita enormemente el análisis e interpretación del problema planteado.
 
 # 2. Preparación de los datos
+
 ## Cargamos el conjunto de datos y realizamos el preprocesamiento necesario.
+
 ```{r pressure, echo=FALSE}
 
 # Cargamos los datos
@@ -83,6 +92,7 @@ num_predictores <- ncol(fumadores_50)
 cat("Número de observaciones:", num_observaciones, "\n")
 cat("Número de predictores:", num_predictores, "\n")
 ```
+
 ```{r pressure, echo=FALSE}
 # Achicamos la informacion en terminos de observaciones
 set.seed(44512364)
@@ -118,7 +128,9 @@ fumadores_50$DRK_YN <- as.factor(fumadores_50$DRK_YN)
 ```
 
 ## Análisis exploratorio de datos
+
 ### Estadísticas descriptivas de las variables principales.
+
 ```{r pressure, echo=FALSE}
 # Definir el vector con los nombres de las variables principales
 variables <- c("age", "gamma_GTP", "HDL_chole", "waistline", "SBP", "LDL_chole", "triglyceride", "hemoglobin", "SGOT_AST", "SGOT_ALT", "BLDS")
@@ -131,9 +143,65 @@ str(variables_principales)
 ```
 
 ### Visualizaciones relevantes
-```{r pressure, echo=FALSE}
 
+Realizamos un análisis inical de las variables con las cuales contamos e identificamos que cuando se evalúa el consumo de alcohol y se determina si una persona es alcohólica, ciertas variables clínicas juegan un papel crucial en la identificación de patrones y efectos asociados con el alcohol. Entre estas variables, Gamma-GTP, SGOT/AST y Triglicéridos se destacan como los indicadores más relevantes. Es por eso que decidimos realizar nuestras visualizaciones eb base a ellas para obtener un mejor entendimiento de estas variables.
+
+##Box plot para Gamma-GTP según el consumo de alcohol
+
+```{r}
+# Crear el scatter plot para Gamma-GTP con línea de regresión
+ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = gamma_GTP, fill = as.factor(DRK_YN))) +
+  geom_boxplot(alpha = 0.5) +
+  geom_smooth(method = "lm", aes(group = 1, color = "Trend"), se = FALSE) +  # Línea de regresión
+  ylim(0, 50) +  # Ajustar el eje y
+  labs(
+    title = "Gamma-GTP según Consumo de Alcohol",
+    x = "Consumo de Alcohol (0 = No, 1 = Sí)",
+    y = "Gamma-GTP"
+  ) +
+  scale_fill_manual(values = c("light blue", "blue")) +  
+  scale_color_manual(name = "Trend", values = c("blue")) +  
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
+
+##Box plot para SGOT/AST según el consumo de alcohol
+
+```{r}
+ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = SGOT_AST, fill = as.factor(DRK_YN))) +
+  geom_boxplot(alpha = 0.5) +
+  geom_smooth(method = "lm", aes(group = 1, color = "Trend"), se = FALSE) +  # Línea de regresión
+  ylim(0, 50) +  # Ajustar el eje y
+  labs(
+    title = "SGOT/AST según Consumo de Alcohol",
+    x = "Consumo de Alcohol (0 = No, 1 = Sí)",
+    y = "SGOT/AST"
+  ) +
+  scale_fill_manual(values = c("light blue", "blue")) +  # Colores personalizados
+  scale_color_manual(name = "Trend", values = c("blue")) +  # Color para la línea de tendencia
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Box plot para Triglicéridos según el consumo de alcohol
+
+```{r}
+ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = triglyceride, fill = as.factor(DRK_YN))) +
+  geom_boxplot(alpha = 0.5) +
+  geom_smooth(method = "lm", aes(group = 1, color = "Trend"), se = FALSE) +  # Línea de regresión
+  ylim(0, 50) +  # Ajustar el eje y
+  labs(
+    title = "Triglicéridos según Consumo de Alcohol",
+    x = "Consumo de Alcohol (0 = No, 1 = Sí)",
+    y = "Triglicéridos"
+  ) +
+  scale_fill_manual(values = c("light blue", "blue")) +  # Colores personalizados
+  scale_color_manual(name = "Trend", values = c("blue")) +  # Color para la línea de tendencia
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+En el análisis, se observa que las dos primeras variables presentan una relación significativa con la variable categórica. Entre ellas, Gamma-GTP muestra una correlación más fuerte en comparación con SGOT/AST. En contraste, el último gráfico revela que los niveles de triglicéridos son similares tanto en personas que consumen alcohol como en aquellas que no lo hacen. Esto sugiere que, a diferencia de Gamma-GTP y SGOT/AST, los triglicéridos no parecen estar tan relacionados con el consumo de alcohol en nuestra muestra.
 
 ### Características observadas en los datos
 
@@ -141,14 +209,18 @@ str(variables_principales)
 
 ```{r pressure, echo=FALSE}
 
+# Guardamos el número total de observaciones en el conjunto de datos
 n <- nrow(fumadores_50)
 
-n_train <- floor(0.70 * n)
-n_val <- floor(0.15 * n)
-n_test <- n - n_train - n_val
+# Definimos el tamaño de los conjuntos de entrenamiento, validación y testeo
+n_train <- floor(0.70 * n)    # Asigno el 70% de las observaciones para entrenamiento
+n_val <- floor(0.15 * n)      # Asigno el 15% de las observaciones para validación
+n_test <- n - n_train - n_val # Asigno el resto para testeo.
 
+# Creamos una secuencia de índices aleatorios para dividir los datos
 indices <- sample(1:n)
 
+# Dividimos los índices en los tres conjuntos
 train_indices <- indices[1:n_train]
 val_indices <- indices[(n_train + 1):(n_train + n_val)]
 test_indices <- indices[(n_train + n_val + 1):n]
@@ -158,24 +230,33 @@ val_data <- fumadores_50[val_indices, ]
 test_data <- fumadores_50[test_indices, ]
 
 # Arbol
+# Defino los parámetros de control para el modelo de árbol de decisión
+control_params <- rpart.control(
+  minsplit = 20,             # Número mínimo de observaciones necesarias para dividir un nodo
+  minbucket = round(20/3),   # Número mínimo de observaciones en una hoja
+  cp = 0.001,                # Parámetro de complejidad para evitar el sobreajuste
+  xval = 10,                 # Número de particiones en la validación cruzada
+  maxdepth = 30              # Profundidad máxima del árbol
+)
 
-control_params <- rpart.control(minsplit = 20, minbucket = round(20/3), cp = 0.001, xval = 10, maxdepth = 30)
-
+# Creamos el modelo de árbol de decisión usando el conjunto de entrenamiento
 arbol_1 <- rpart(formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
                data = train_data, method = "class", control = control_params)
 
+# Visualización del arbol
 rpart.plot(arbol_1)
 ```
 
 ## Interpretación del arbol obtenido
 
--   Podemos visualizar que
+-   Podemos visualizar que Los niveles de gamma-GTP son un factor determinante en la predicción, ya que es un marcador hepático que puede estar elevado en personas que consumen alcohol. Si la hemoglobina es mayor o igual a 14, y gamma-GTP es elevado, la probabilidad de consumo de alcohol aumenta significativamente (P = 0.78). Este es el caso donde la probabilidad de ser alcoholico es más alta. Otros factores como la edad, el colesterol LDL, y las enzimas hepáticas SGOT_ALT y HDL también influyen en la probabilidad de consumo. El árbol muestra cómo estas variables se combinan para segmentar a las personas y estimar su comportamiento en relación con el consumo de alcohol.
 
 # 4. Evaluacion del árbol de decision básico
 
 ## Predicciones
 
 ```{r pressure, echo=FALSE}
+
 # Predecir las probabilidades
 pred_prob <- predict(arbol_1, newdata = test_data, type = "prob")
 
@@ -186,15 +267,41 @@ head(pred_prob)
 head(pred_class)
 ```
 
+Los resultados presentados muestran las predicciones del modelo de árbol de decisión en términos de probabilidades y clases para un conjunto de datos de prueba.Cada fila muestra la probabilidad de que un individuo no consuma alcohol (N) o consuma alcohol (Y). Por ejemplo, el primer individuo tiene una probabilidad de 0.679 de consumir alcohol y 0.320 de no consumir. Basado en las probabilidades, el modelo asigna una clase a cada individuo. Si la probabilidad de "Y" (consumo de alcohol) es mayor que la de "N", la clase predicha es "Y", y viceversa. Utilizaremos las metricas de performance para realizar un análisis de los resultados arrojados.
+
 ## Metricas de performance
+
 ### Matriz de confusion
 
 ```{r pressure, echo=FALSE}
+
 # Calcular la matriz de confusión
 matriz_confusion <- table(Predicted = pred_class, Actual = test_data$DRK_YN)
 
-print(matriz_confusion)
+# Convertir la matriz de confusión a un data frame en formato largo
+matriz_confusion_df <- as.data.frame(melt(matriz_confusion))
+
+# Crear el gráfico de la matriz de confusión
+ggplot(matriz_confusion_df, aes(x = Actual, y = Predicted, fill = value)) +
+  geom_tile(color = "blue") +
+  geom_text(aes(label = value), vjust = 1) +
+  scale_fill_gradient(low = "white", high = "light blue") +
+  labs(title = "Matriz de Confusión",
+       x = "Clase Actual",
+       y = "Clase Predicha",
+       fill = "Frecuencia") +
+  theme_minimal()
 ```
+
+La matriz de confusión muestra el rendimiento del modelo de clasificación al predecir si las personas consumen alcohol o no. Aquí está el análisis de la matriz:
+
+-   **Verdaderos Positivos (Y-Y):** El modelo identificó correctamente a 2663 personas que consumen alcohol.
+
+-   **Verdaderos Negativos (N-N)**: El modelo identificó correctamente a 2512 personas que no consumen alcohol.
+
+-   **Falsos Positivos (N-Y):** 1094 personas fueron incorrectamente clasificadas como consumidoras de alcohol cuando en realidad no lo son.
+
+-   **Falsos Negativos (Y-N)**: personas que consumen alcohol fueron incorrectamente clasificadas como no consumidoras.
 
 ### Accuracy
 
@@ -202,6 +309,8 @@ print(matriz_confusion)
 accuracy <- sum(diag(matriz_confusion)) / sum(matriz_confusion)
 cat("Accuracy: ", accuracy, "\n")
 ```
+
+-   Esta metrica hace referencia a la precisión del modelo. Mide la fracción de predicciones correctas realizadas por el modelo sobre el total de predicciones. Nos proporciona una visión general de cuán bien está funcionando el modelo en términos de predicciones correctas variando entre 0 y 1. **El accuracy de nuestro modelo es 0.69**
 
 ### Precision y Recall
 
@@ -214,6 +323,10 @@ cat("Precision: ", precision, "\n")
 cat("Recall: ", recall, "\n")
 ```
 
+-   El modelo tiene una precisión del 0.6838726, lo que indica que de todas las veces que el modelo predijo que una observación era positiva, aproximadamente el **68.39%** de esas predicciones eran correctas.
+
+-   El modelo tiene un recall del 0.7088102, lo que significa que de todas las observación que realmente son positivas, el modelo identificó correctamente aproximadamente el **70.88%** de ellas.
+
 ### F1-Score
 
 ```{r pressure, echo=FALSE}
@@ -222,6 +335,30 @@ f1_score <- 2 * ((precision * recall) / (precision + recall))
 cat("F1-Score: ", f1_score, "\n")
 
 ```
+
+-   El F1-score es una métrica que combina la precisión (precision) y la recuperación (recall) en una sola medida, proporcionando una manera de evaluar el equilibrio entre estos dos aspectos en un modelo de clasificación. Un F1-score de 0.696 indica que el modelo tiene un rendimiento moderado en términos de precisión y recuperación. lo que es coherente con el inciso de Recall y precision.
+
+```{r}
+# Crear un data frame con las métricas
+metrics_df <- data.frame(
+  Metric = c("Accuracy", "Precision", "Recall", "F1-Score"),
+  Value = c(0.69, 0.6838726, 0.7088102, 0.6961182)
+)
+
+# Crear el gráfico de barras con etiquetas de porcentaje y una escala de colores
+ggplot(metrics_df, aes(x = Metric, y = Value, fill = Value)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = scales::percent(Value)), vjust = -0.3, size = 4) +  # Etiquetas en las barras
+  ylim(0, 1) +  # Ajustar el eje y para que vaya de 0 a 1
+  labs(title = "Métricas del Modelo de Clasificación",
+       x = "Métrica",
+       y = "Valor") +
+  scale_fill_gradient(low = "blue", high = "lightblue") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+El F1-score de 0.696 y la accuracy de 0.69 muestran que el modelo tiene un desempeño moderado, con un buen equilibrio entre precisión y recuperación Igualmente deja un margén para la mejora del modelo dado la cantidad de flasos positivos y falsos negativos.
 
 ### AUC-ROC
 
@@ -239,8 +376,11 @@ cat("AUC-ROC: ", auc_value, "\n")
 ## Interpretamos los resultados obtenidos
 
 # 5. Optimización del modelo
+
 ## Experimentamos con diferentes valores de hiperparámetros
+
 En este experimento, hemos llevado a cabo un proceso de optimización del árbol de decisión utilizando la métrica de rendimiento AUC-ROC como criterio principal. El objetivo era identificar la combinación óptima de hiperparámetros (maxdepth, minsplit, minbucket) que maximiza el rendimiento del modelo en el conjunto de validación.
+
 ```{r pressure, echo=FALSE}
 library(rpart)
 library(pROC)
@@ -487,6 +627,7 @@ rpart.plot(arbol_1, main = "Árbol Básico")
 # Graficar el árbol optimizado
 rpart.plot(best_tree, main = "Árbol Optimizado")
 ```
+
 (ESCRIBIR)
 
 ## Importancia de las variables
@@ -525,10 +666,13 @@ ggplot(importance_opt_df, aes(x = reorder(Variable, Importance), y = Importance)
   theme_minimal()
 
 ```
+
 (ESCRIBIR)
 
 # 7. Análisis del impacto de los valores faltantes
+
 ## Generamos tres nuevos sets de conjuntos de datos
+
 ```{r pressure, echo=FALSE}
 replace_with_na <- function(df, prob) {
   df_na <- df
@@ -576,6 +720,7 @@ cat("Proporción de NAs en el conjunto de testeo con 75% de reemplazo:", mean(is
 ```
 
 ## Árbol para el set de 20% de NAs
+
 ```{r pressure, echo=FALSE}
 best_hyperparameters_20 <- optimize_decision_tree(
   train_data = train_data_20, 
@@ -617,6 +762,7 @@ if (sum(valid_indices_test_20) > 0) {
 ```
 
 ## Árbol para el set de 50% de NAs
+
 ```{r pressure, echo=FALSE}
 best_hyperparameters_50 <- optimize_decision_tree(
   train_data = train_data_50, 
@@ -657,6 +803,7 @@ if (sum(valid_indices_test_50) > 0) {
 ```
 
 ## Árbol para el set de 75% de NAs
+
 ```{r pressure, echo=FALSE}
 best_hyperparameters_75 <- optimize_decision_tree(
   train_data = train_data_75, 
@@ -698,6 +845,7 @@ if (sum(valid_indices_test_75) > 0) {
 ```
 
 ## Comparación del rendimiento en testeo del mejor árbol obtenido con la performance obtenida por el árbol optimizado del punto 5
+
 ```{r pressure, echo=FALSE}
 # Función para calcular métricas adicionales
 calculate_metrics <- function(actual, predicted_probs, threshold = 0.5) {
