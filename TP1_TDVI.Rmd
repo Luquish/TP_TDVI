@@ -249,7 +249,7 @@ rpart.plot(arbol_1)
 
 ## Interpretación del arbol obtenido
 
--   Podemos visualizar que Los niveles de gamma-GTP son un factor determinante en la predicción, ya que es un marcador hepático que puede estar elevado en personas que consumen alcohol. Si la hemoglobina es mayor o igual a 14, y gamma-GTP es elevado, la probabilidad de consumo de alcohol aumenta significativamente (P = 0.78). Este es el caso donde la probabilidad de ser alcoholico es más alta. Otros factores como la edad, el colesterol LDL, y las enzimas hepáticas SGOT_ALT y HDL también influyen en la probabilidad de consumo. El árbol muestra cómo estas variables se combinan para segmentar a las personas y estimar su comportamiento en relación con el consumo de alcohol.
+-   Podemos visualizar que Los niveles de gamma-GTP son un factor determinante en la predicción, ya que es un marcador hepático que puede estar elevado en personas que consumen alcohol. Si la hemoglobina es mayor o igual a 14, y gamma-GTP es elevado, la probabilidad de consumo de alcohol aumenta significativamente (P = 0.78). Este es el caso donde la probabilidad de ser una persona que consume alcohol es más alta. Otros factores como la edad, el colesterol LDL, y las enzimas hepáticas SGOT_ALT y HDL también influyen en la probabilidad de consumo. El árbol muestra cómo estas variables se combinan para segmentar a las personas y estimar su comportamiento en relación con el consumo de alcohol.
 
 # 4. Evaluacion del árbol de decision básico
 
@@ -371,9 +371,15 @@ plot(roc_curve, col = "blue", main = "ROC Curve")
 auc_value <- auc(roc_curve)
 cat("AUC-ROC: ", auc_value, "\n")
 
+print(auc_value)
+
 ```
+La curva ROC es una representación gráfica que muestra el rendimiento del modelo de clasificación binaria a través de todos los posibles umbrales de decisión. En el eje Y se encuentra la sensibilidad (tasa de verdaderos positivos), que mide la proporción de casos positivos correctamente identificados por el modelo. En el eje X se encuentra la tasa de falsos positivos, que mide la proporción de casos negativos que fueron incorrectamente clasificados como positivos. En este gráfico, la curva se acerca al borde superior izquierdo, lo que indica un buen rendimiento del modelo. Sin embargo, la curva no está completamente cerca del borde lo que sugiere que hay margen de mejora.
+El AUC-ROC es un valor numérico que mide el área bajo la curva ROC. Este valor varía entre 0.5 y 1.0. Con un valor de **0.7318**, el modelo tiene una capacidad razonable para distinguir entre las personas que consumen alcohol y las que no. Un AUC en este rango (0.7-0.8) generalmente indica que el modelo tiene un rendimiento aceptable, pero aún hay margen de mejora (Esto es coherente con el grafico obtenido)
 
 ## Interpretamos los resultados obtenidos
+
+El árbol de decisión proporciona un rendimiento aceptable, pero con áreas de mejora. El AUC-ROC de 0.7318 sugiere que el modelo tiene un poder de discriminación razonable, pero la matriz de confusión y las métricas de precisión, recall y F1-score muestran que el modelo esta trabajando con una cantidad notable de errores en la clasificación. Probaremos en los proximos puntos, ajustando los hiperparametros si obtenemos una mejora del modelo en cuestión.
 
 # 5. Optimización del modelo
 
@@ -389,14 +395,19 @@ library(caret)
 # Definir la función para optimizar el árbol de decisión
 optimize_decision_tree <- function(train_data, val_data, formula, maxdepth_values, minsplit_values, minbucket_values) {
   
+  #número total de combinaciones de hiperparámetros
   total_combinations <- length(maxdepth_values) * length(minsplit_values) * length(minbucket_values)
   
+  #barra de progreso para visualizar el avance del proceso
   pb <- txtProgressBar(min = 0, max = total_combinations, style = 3)
   
+  # Inicializar un contador de progreso
   progress_counter <- 0
   
+  #data frame vacío para almacenar los resultados
   results <- data.frame(maxdepth = integer(), minsplit = integer(), minbucket = integer(), AUC = numeric())
   
+  #Vamos a probar todas las combinaciones de hiperparámetros
   for (maxdepth in maxdepth_values) {
     for (minsplit in minsplit_values) {
       for (minbucket in minbucket_values) {
@@ -404,20 +415,24 @@ optimize_decision_tree <- function(train_data, val_data, formula, maxdepth_value
         progress_counter <- progress_counter + 1
         setTxtProgressBar(pb, progress_counter)
         
+        #Parámetros de control del árbol de decisión
         control_params <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 0, cval = 0, maxdepth = maxdepth)
         
+        #Entrenamos el árbol de decisión con los parámetros actuales
         arbol <- rpart(formula, data = train_data, method = "class", control = control_params)
         
+        #Predecimos las probabilidades en el conjunto de validación
         pred_prob_val <- tryCatch({
           predict(arbol, newdata = val_data, type = "prob")
         }, error = function(e) {
           NULL
         })
         
-        if (!is.null(pred_prob_val)) {
+        if (!is.null(pred_prob_val)) { # Verifica si la predicción no es NULL
           
           valid_indices <- !is.na(pred_prob_val[, "Y"]) & !is.nan(pred_prob_val[, "Y"]) & !is.na(val_data$DRK_YN) & !is.nan(val_data$DRK_YN)
           
+          # Identificar índices válidos (sin NA o NaN) en las predicciones y en la variable objetivo
           if (sum(valid_indices) > 0) {
             pred_prob_val_clean <- pred_prob_val[valid_indices, ]
             val_data_clean <- val_data[valid_indices, ]
