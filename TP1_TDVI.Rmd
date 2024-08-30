@@ -79,25 +79,26 @@ Además, los árboles de decisión manejan de manera efectiva los datos faltante
 ```{r pressure, echo=FALSE}
 
 # Cargamos los datos
-#fumadores = read.csv("data/smoking_driking_dataset_Ver01.csv", header = TRUE, sep = ",")
-fumadores_50 <- read.csv("data/reducido.csv", header = TRUE, sep = ",")
+fumadores = read.csv("data/smoking_driking_dataset_Ver01.csv", header = TRUE, sep = ",")
+#fumadores_50 <- read.csv("data/reducido.csv", header = TRUE, sep = ",")
 
 # Verificar el número de observaciones y predictores
 #num_observaciones <- nrow(fumadores)
 #num_predictores <- ncol(fumadores)
 
-num_observaciones <- nrow(fumadores_50)
-num_predictores <- ncol(fumadores_50)
+#num_observaciones <- nrow(fumadores_50)
+#num_predictores <- ncol(fumadores_50)
 
-cat("Número de observaciones:", num_observaciones, "\n")
-cat("Número de predictores:", num_predictores, "\n")
+#cat("Número de observaciones:", num_observaciones, "\n")
+#cat("Número de predictores:", num_predictores, "\n")
 ```
 
 ```{r pressure, echo=FALSE}
 # Achicamos la informacion en terminos de observaciones
 set.seed(44512364)
-# fumadores_50 <- fumadores[sample(nrow(fumadores), 50000), ]
-# write.csv(fumadores_50, "data/reducido.csv", row.names = FALSE)
+fumadores_50 <- fumadores[sample(nrow(fumadores), 50000), ]
+write.csv(fumadores_50, "data/reducido.csv", row.names = FALSE)
+remove(fumadores)
 
 # Modificamos las variables categoricas de numeros a palabras:
 
@@ -146,13 +147,14 @@ str(variables_principales)
 
 Realizamos un análisis inical de las variables con las cuales contamos e identificamos que cuando se evalúa el consumo de alcohol y se determina si una persona es alcohólica, ciertas variables clínicas juegan un papel crucial en la identificación de patrones y efectos asociados con el alcohol. Entre estas variables, Gamma-GTP, SGOT/AST y Triglicéridos se destacan como los indicadores más relevantes. Es por eso que decidimos realizar nuestras visualizaciones eb base a ellas para obtener un mejor entendimiento de estas variables.
 
-##Box plot para Gamma-GTP según el consumo de alcohol
+## Estadísticas descriptivas
+
+## Box plot para Gamma-GTP según el consumo de alcohol
 
 ```{r}
 # Crear el scatter plot para Gamma-GTP con línea de regresión
 ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = gamma_GTP, fill = as.factor(DRK_YN))) +
   geom_boxplot(alpha = 0.5) +
-  geom_smooth(method = "lm", aes(group = 1, color = "Trend"), se = FALSE) +  # Línea de regresión
   ylim(0, 50) +  # Ajustar el eje y
   labs(
     title = "Gamma-GTP según Consumo de Alcohol",
@@ -165,13 +167,13 @@ ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = gamma_GTP, fill = as.factor(
   theme(legend.position = "none")
 ```
 
-##Box plot para SGOT/AST según el consumo de alcohol
+el boxplot graficado sugiere una asociación entre el consumo de alcohol y niveles más altos de Gamma-GTP, con una mayor variabilidad en los niveles entre aquellos que consumen alcohol.
+
+## Box plot para SGOT/AST según el consumo de alcohol
 
 ```{r}
 ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = SGOT_AST, fill = as.factor(DRK_YN))) +
-  geom_boxplot(alpha = 0.5) +
-  geom_smooth(method = "lm", aes(group = 1, color = "Trend"), se = FALSE) +  # Línea de regresión
-  ylim(0, 50) +  # Ajustar el eje y
+  geom_boxplot(alpha = 0.5) + ylim(0, 50) +  # Ajustar el eje y
   labs(
     title = "SGOT/AST según Consumo de Alcohol",
     x = "Consumo de Alcohol (0 = No, 1 = Sí)",
@@ -183,12 +185,13 @@ ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = SGOT_AST, fill = as.factor(D
   theme(legend.position = "none")
 ```
 
+El boxplot indica que el consumo de alcohol no parece tener un efecto significativo en los niveles de SGOT/AST, ya que la mediana y la dispersión son bastante similares entre los dos grupos. Sin embargo, hay una presencia notable de outliers en ambos grupos, especialmente en el grupo sin consumo de alcohol.
+
 ### Box plot para Triglicéridos según el consumo de alcohol
 
 ```{r}
 ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = triglyceride, fill = as.factor(DRK_YN))) +
   geom_boxplot(alpha = 0.5) +
-  geom_smooth(method = "lm", aes(group = 1, color = "Trend"), se = FALSE) +  # Línea de regresión
   ylim(0, 50) +  # Ajustar el eje y
   labs(
     title = "Triglicéridos según Consumo de Alcohol",
@@ -201,7 +204,9 @@ ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = triglyceride, fill = as.fact
   theme(legend.position = "none")
 ```
 
-En el análisis, se observa que las dos primeras variables presentan una relación significativa con la variable categórica. Entre ellas, Gamma-GTP muestra una correlación más fuerte en comparación con SGOT/AST. En contraste, el último gráfico revela que los niveles de triglicéridos son similares tanto en personas que consumen alcohol como en aquellas que no lo hacen. Esto sugiere que, a diferencia de Gamma-GTP y SGOT/AST, los triglicéridos no parecen estar tan relacionados con el consumo de alcohol en nuestra muestra.
+Este boxplot indica que el consumo de alcohol no parece tener un efecto notable en los niveles medianos o la variabilidad central de los triglicéridos. Sin embargo, se observa la presencia de varios outliers, especialmente en el extremo inferior, lo que sugiere que hay personas en ambos grupos con niveles de triglicéridos más bajos de lo esperado.
+
+En el análisis, se observa que las dos primeras variables (Gamma-GTP y SGOT/AST) presentan una relación con la variable categórica de consumo de alcohol. Entre ellas, Gamma-GTP muestra una asociación más fuerte en comparación con SGOT/AST. En contraste, el último gráfico revela que los niveles de triglicéridos son similares tanto en personas que consumen alcohol como en aquellas que no lo hacen. Esto sugiere que, a diferencia de Gamma-GTP y SGOT/AST, los triglicéridos no parecen estar relacionados directamente con el consumo de alcohol en nuestra muestra.
 
 ### Características observadas en los datos
 
@@ -240,7 +245,7 @@ control_params <- rpart.control(
 )
 
 # Creamos el modelo de árbol de decisión usando el conjunto de entrenamiento
-arbol_1 <- rpart(formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+arbol_1 <- rpart(formula = DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
                data = train_data, method = "class", control = control_params)
 
 # Visualización del arbol
@@ -249,7 +254,9 @@ rpart.plot(arbol_1)
 
 ## Interpretación del arbol obtenido
 
--   Podemos visualizar que Los niveles de gamma-GTP son un factor determinante en la predicción, ya que es un marcador hepático que puede estar elevado en personas que consumen alcohol. Si la hemoglobina es mayor o igual a 14, y gamma-GTP es elevado, la probabilidad de consumo de alcohol aumenta significativamente (P = 0.78). Este es el caso donde la probabilidad de ser una persona que consume alcohol es más alta. Otros factores como la edad, el colesterol LDL, y las enzimas hepáticas SGOT_ALT y HDL también influyen en la probabilidad de consumo. El árbol muestra cómo estas variables se combinan para segmentar a las personas y estimar su comportamiento en relación con el consumo de alcohol.
+Podemos visualizar que los niveles de gamma-GTP son un factor determinante en la predicción, ya que es un marcador hepático que puede estar elevado en personas que consumen alcohol. El árbol de decisión revela que, si la hemoglobina es mayor o igual a 14 y los niveles de gamma-GTP son elevados, la probabilidad de consumo de alcohol aumenta significativamente, alcanzando un 78% (P = 0.78). Este es el caso donde la probabilidad de ser una persona que consume alcohol es más alta en todo el árbol.Además de gamma-GTP, otros factores como la edad, los niveles de colesterol LDL y HDL, y las enzimas hepáticas como SGOT/ALT también juegan un papel importante en la segmentación y predicción. Por ejemplo, niveles bajos de gamma-GTP combinados con factores como edad avanzada y valores específicos de colesterol (LDL y HDL) disminuyen la probabilidad de consumo de alcohol.
+
+El árbol muestra cómo estas variables se combinan de manera jerárquica para segmentar a las personas y estimar su comportamiento en relación con el consumo de alcohol. Cada rama del árbol representa una serie de decisiones basadas en los valores de estas variables, reflejando la complejidad de la interacción entre factores biológicos y el comportamiento de consumo de alcohol.
 
 # 4. Evaluacion del árbol de decision básico
 
@@ -267,7 +274,7 @@ head(pred_prob)
 head(pred_class)
 ```
 
-Los resultados presentados muestran las predicciones del modelo de árbol de decisión en términos de probabilidades y clases para un conjunto de datos de prueba.Cada fila muestra la probabilidad de que un individuo no consuma alcohol (N) o consuma alcohol (Y). Por ejemplo, el primer individuo tiene una probabilidad de 0.679 de consumir alcohol y 0.320 de no consumir. Basado en las probabilidades, el modelo asigna una clase a cada individuo. Si la probabilidad de "Y" (consumo de alcohol) es mayor que la de "N", la clase predicha es "Y", y viceversa. Utilizaremos las metricas de performance para realizar un análisis de los resultados arrojados.
+Los resultados presentados muestran las predicciones del modelo de árbol de decisión en términos de probabilidades y clases para un conjunto de datos de prueba.Cada fila muestra la probabilidad de que un individuo no consuma alcohol (N) o consuma alcohol (Y). Por ejemplo, el primer individuo tiene una probabilidad de 0.7768888 de consumir alcohol y 0.2231112 de no consumir. Basado en las probabilidades, el modelo asigna una clase a cada individuo. Si la probabilidad de "Y" (consumo de alcohol) es mayor que la de "N", la clase predicha es "Y", y viceversa. Utilizaremos las metricas de performance para realizar un análisis de los resultados arrojados.
 
 ## Metricas de performance
 
@@ -295,13 +302,13 @@ ggplot(matriz_confusion_df, aes(x = Actual, y = Predicted, fill = value)) +
 
 La matriz de confusión muestra el rendimiento del modelo de clasificación al predecir si las personas consumen alcohol o no. Aquí está el análisis de la matriz:
 
--   **Verdaderos Positivos (Y-Y):** El modelo identificó correctamente a 2663 personas que consumen alcohol.
+-   **Verdaderos Positivos (Y-Y):** El modelo identificó correctamente a 2680 personas que consumen alcohol.
 
--   **Verdaderos Negativos (N-N)**: El modelo identificó correctamente a 2512 personas que no consumen alcohol.
+-   **Verdaderos Negativos (N-N)**: El modelo identificó correctamente a 2498 personas que no consumen alcohol.
 
--   **Falsos Positivos (N-Y):** 1094 personas fueron incorrectamente clasificadas como consumidoras de alcohol cuando en realidad no lo son.
+-   **Falsos Positivos (N-Y):** 1082 personas fueron incorrectamente clasificadas como consumidoras de alcohol cuando en realidad no lo son.
 
--   **Falsos Negativos (Y-N)**: personas que consumen alcohol fueron incorrectamente clasificadas como no consumidoras.
+-   **Falsos Negativos (Y-N)**: 1240 personas que consumen alcohol fueron incorrectamente clasificadas como no consumidoras.
 
 ### Accuracy
 
@@ -323,9 +330,9 @@ cat("Precision: ", precision, "\n")
 cat("Recall: ", recall, "\n")
 ```
 
--   El modelo tiene una precisión del 0.6838726, lo que indica que de todas las veces que el modelo predijo que una observación era positiva, aproximadamente el **68.39%** de esas predicciones eran correctas.
+-   El modelo tiene una precisión del 0.6686642, lo que indica que de todas las veces que el modelo predijo que una observación era positiva, aproximadamente el **66.86%** de esas predicciones eran correctas.
 
--   El modelo tiene un recall del 0.7088102, lo que significa que de todas las observación que realmente son positivas, el modelo identificó correctamente aproximadamente el **70.88%** de ellas.
+-   El modelo tiene un recall del 0.7243711, lo que significa que de todas las observación que realmente son positivas, el modelo identificó correctamente aproximadamente el **72.43%** de ellas.
 
 ### F1-Score
 
@@ -336,13 +343,13 @@ cat("F1-Score: ", f1_score, "\n")
 
 ```
 
--   El F1-score es una métrica que combina la precisión (precision) y la recuperación (recall) en una sola medida, proporcionando una manera de evaluar el equilibrio entre estos dos aspectos en un modelo de clasificación. Un F1-score de 0.696 indica que el modelo tiene un rendimiento moderado en términos de precisión y recuperación. lo que es coherente con el inciso de Recall y precision.
+-   El F1-score es una métrica que combina la precisión (precision) y la recuperación (recall) en una sola medida, proporcionando una manera de evaluar el equilibrio entre estos dos aspectos en un modelo de clasificación. Un F1-score de 0.695 indica que el modelo tiene un rendimiento moderado en términos de precisión y recuperación. lo que es coherente con el inciso de Recall y precision.
 
 ```{r}
 # Crear un data frame con las métricas
 metrics_df <- data.frame(
   Metric = c("Accuracy", "Precision", "Recall", "F1-Score"),
-  Value = c(0.69, 0.6838726, 0.7088102, 0.6961182)
+  Value = c(accuracy, precision, recall, f1_score)
 )
 
 # Crear el gráfico de barras con etiquetas de porcentaje y una escala de colores
@@ -363,19 +370,52 @@ El F1-score de 0.696 y la accuracy de 0.69 muestran que el modelo tiene un desem
 ### AUC-ROC
 
 ```{r pressure, echo=FALSE}
-roc_curve <- roc(test_data$DRK_YN, pred_prob[, "Y"], levels = rev(levels(test_data$DRK_YN)))
+library(ggplot2)
+library(dplyr)
 
-plot(roc_curve, col = "blue", main = "ROC Curve")
+# Ordenar los datos según las probabilidades predichas de mayor a menor
+roc_data <- test_data %>%
+  mutate(predicted_prob = pred_prob[, "Y"]) %>%
+  arrange(desc(predicted_prob))
 
-# Calcular el valor AUC
-auc_value <- auc(roc_curve)
-cat("AUC-ROC: ", auc_value, "\n")
+# Crear columnas para True Positives y False Positives
+roc_data <- roc_data %>%
+  mutate(
+    TP = cumsum(DRK_YN == "Y"),
+    FP = cumsum(DRK_YN == "N"),
+    FN = sum(DRK_YN == "Y") - TP,
+    TN = sum(DRK_YN == "N") - FP
+  )
 
-print(auc_value)
+# Calcular Sensibilidad (TPR) y Especificidad (FPR)
+roc_data <- roc_data %>%
+  mutate(
+    TPR = TP / (TP + FN),
+    FPR = FP / (FP + TN)
+  )
+
+# Añadir el punto (0, 0) y (1, 1)
+roc_data <- bind_rows(
+  data.frame(TPR = 0, FPR = 0),
+  roc_data,
+  data.frame(TPR = 1, FPR = 1)
+)
+
+# Calcular AUC
+auc_value <- sum(diff(roc_data$FPR) * (roc_data$TPR[-1] + roc_data$TPR[-length(roc_data$TPR)]) / 2)
+
+# Graficar ROC Curve con AUC en la leyenda
+ggplot(roc_data, aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue", size = 1) +  # Curva ROC
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +  # Línea diagonal (referencia)
+  labs(title = "AUC-ROC", x = "1 - Especificidad (FPR)", y = "Sensibilidad (TPR)") +
+  coord_equal() +  # Asegurar que la escala sea igual en ambos ejes
+  theme_minimal() +
+  annotate("text", x = 0.75, y = 0.25, label = paste("AUC =", round(auc_value, 3)), size = 5, color = "red")
 
 ```
-La curva ROC es una representación gráfica que muestra el rendimiento del modelo de clasificación binaria a través de todos los posibles umbrales de decisión. En el eje Y se encuentra la sensibilidad (tasa de verdaderos positivos), que mide la proporción de casos positivos correctamente identificados por el modelo. En el eje X se encuentra la tasa de falsos positivos, que mide la proporción de casos negativos que fueron incorrectamente clasificados como positivos. En este gráfico, la curva se acerca al borde superior izquierdo, lo que indica un buen rendimiento del modelo. Sin embargo, la curva no está completamente cerca del borde lo que sugiere que hay margen de mejora.
-El AUC-ROC es un valor numérico que mide el área bajo la curva ROC. Este valor varía entre 0.5 y 1.0. Con un valor de **0.7318**, el modelo tiene una capacidad razonable para distinguir entre las personas que consumen alcohol y las que no. Un AUC en este rango (0.7-0.8) generalmente indica que el modelo tiene un rendimiento aceptable, pero aún hay margen de mejora (Esto es coherente con el grafico obtenido)
+
+La curva ROC es una representación gráfica que muestra el rendimiento del modelo de clasificación binaria a través de todos los posibles umbrales de decisión. En el eje Y se encuentra la tasa de verdaderos positivos (Sensibilidad), que mide la proporción de casos positivos correctamente identificados por el modelo. En el eje X se encuentra la tasa de falsos positivos (1 - Especificidad), que mide la proporción de casos negativos que fueron incorrectamente clasificados como positivos. En este gráfico, la curva se acerca al borde superior izquierdo, lo que indica un buen rendimiento del modelo. Sin embargo, la curva no está completamente cerca del borde lo que sugiere que hay margen de mejora. El AUC-ROC es un valor numérico que mide el área bajo la curva ROC. Este valor varía entre 0.5 y 1.0. Con un valor de **0.7326349**, el modelo tiene una capacidad razonable para distinguir entre las personas que consumen alcohol y las que no.
 
 ## Interpretamos los resultados obtenidos
 
@@ -385,29 +425,23 @@ El árbol de decisión proporciona un rendimiento aceptable, pero con áreas de 
 
 ## Experimentamos con diferentes valores de hiperparámetros
 
-En este experimento, hemos llevado a cabo un proceso de optimización del árbol de decisión utilizando la métrica de rendimiento AUC-ROC como criterio principal. El objetivo era identificar la combinación óptima de hiperparámetros (maxdepth, minsplit, minbucket) que maximiza el rendimiento del modelo en el conjunto de validación.
-
 ```{r pressure, echo=FALSE}
-library(rpart)
-library(pROC)
-library(caret)
-
 # Definir la función para optimizar el árbol de decisión
 optimize_decision_tree <- function(train_data, val_data, formula, maxdepth_values, minsplit_values, minbucket_values) {
   
-  #número total de combinaciones de hiperparámetros
+  # Número total de combinaciones de hiperparámetros
   total_combinations <- length(maxdepth_values) * length(minsplit_values) * length(minbucket_values)
   
-  #barra de progreso para visualizar el avance del proceso
+  # Barra de progreso para visualizar el avance del proceso
   pb <- txtProgressBar(min = 0, max = total_combinations, style = 3)
   
   # Inicializar un contador de progreso
   progress_counter <- 0
   
-  #data frame vacío para almacenar los resultados
+  # Data frame vacío para almacenar los resultados
   results <- data.frame(maxdepth = integer(), minsplit = integer(), minbucket = integer(), AUC = numeric())
   
-  #Vamos a probar todas las combinaciones de hiperparámetros
+  # Vamos a probar todas las combinaciones de hiperparámetros
   for (maxdepth in maxdepth_values) {
     for (minsplit in minsplit_values) {
       for (minbucket in minbucket_values) {
@@ -415,13 +449,13 @@ optimize_decision_tree <- function(train_data, val_data, formula, maxdepth_value
         progress_counter <- progress_counter + 1
         setTxtProgressBar(pb, progress_counter)
         
-        #Parámetros de control del árbol de decisión
-        control_params <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 0, cval = 0, maxdepth = maxdepth)
+        # Parámetros de control del árbol de decisión
+        control_params <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 0, xval = 0, maxdepth = maxdepth)
         
-        #Entrenamos el árbol de decisión con los parámetros actuales
+        # Entrenamos el árbol de decisión con los parámetros actuales
         arbol <- rpart(formula, data = train_data, method = "class", control = control_params)
         
-        #Predecimos las probabilidades en el conjunto de validación
+        # Predecimos las probabilidades en el conjunto de validación
         pred_prob_val <- tryCatch({
           predict(arbol, newdata = val_data, type = "prob")
         }, error = function(e) {
@@ -463,54 +497,59 @@ optimize_decision_tree <- function(train_data, val_data, formula, maxdepth_value
   
   best_rows <- results[results$AUC == max_auc, ]
   
-  return(best_rows)
+  return(list(best_hyperparameters = best_rows, all_results = results))
 }
 
 # Ejemplo de uso de la función
-best_hyperparameters <- optimize_decision_tree(
+optimization_results <- optimize_decision_tree(
   train_data = train_data, 
   val_data = val_data, 
-  formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
-  maxdepth_values = c(5, 10, 15, 20, 25, 30),
+  formula = DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
+  maxdepth_values = c(5, 6, 7, 8, 9, 10),
   minsplit_values = c(2, 5, 10, 15, 20),
-  minbucket_values = c(1, 3, 5, 7, 10, 15)
+  minbucket_values = c(10, 15, 20, 25, 30)
 )
 
-print(best_hyperparameters)
+# Imprimir los mejores hiperparámetros
+print(optimization_results$best_hyperparameters)
 
 ```
+
+En este experimento, hemos llevado a cabo un proceso de optimización del árbol de decisión utilizando la métrica de rendimiento AUC-ROC como criterio principal. El objetivo era identificar la combinación óptima de hiperparámetros (maxdepth, minsplit, minbucket) que maximiza el rendimiento del modelo en el conjunto de validación.
 
 ## Visualizaciones
 
 ```{r pressure, echo=FALSE}
 # Scatter plot para maxdepth vs AUC
-ggplot(results, aes(x = maxdepth, y = AUC)) +
+ggplot(optimization_results$all_results, aes(x = maxdepth, y = AUC)) +
   geom_point() +
   geom_smooth(method = "loess", se = FALSE) + 
   labs(title = "Relación entre MaxDepth y AUC", x = "MaxDepth", y = "AUC") +
   theme_minimal()
 
 # Scatter plot para minsplit vs AUC
-ggplot(results, aes(x = minsplit, y = AUC)) +
+ggplot(optimization_results$all_results, aes(x = minsplit, y = AUC)) +
   geom_point() +
   geom_smooth(method = "loess", se = FALSE) + 
   labs(title = "Relación entre MinSplit y AUC", x = "MinSplit", y = "AUC") +
   theme_minimal()
 
 # Scatter plot para minbucket vs AUC
-ggplot(results, aes(x = minbucket, y = AUC)) +
+ggplot(optimization_results$all_results, aes(x = minbucket, y = AUC)) +
   geom_point() +
   geom_smooth(method = "loess", se = FALSE) + 
   labs(title = "Relación entre MinBucket y AUC", x = "MinBucket", y = "AUC") +
   theme_minimal()
 ```
 
+Observando los gráficos y los resultados, podemos sacar la conclusion de que el parametro MinSplit no modifica el resultado del AUC en este caso, mientras que la MaxDepth y el MinBucket toman como mejores valores 8 y 30 respectivamente
+
 ## AUC-ROC en el conjunto de testeo
 
 ```{r pressure, echo=FALSE}
-best_combination <- best_hyperparameters[1, ]
+best_combination <- optimization_results$best_hyperparameters[1, ]
 
-best_tree <- rpart(DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+best_tree <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
                    data = train_data, method = "class",
                    control = rpart.control(minsplit = best_combination$minsplit,
                                            minbucket = best_combination$minbucket,
@@ -563,6 +602,10 @@ cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test, "\n")
 
 
 ```
+
+Tras ajustar los hiperparámetros del árbol de decisión, observamos una mejora en el rendimiento del modelo, como lo indica el incremento en el AUC-ROC en el conjunto de testeo. A continuación, se detalla el rendimiento de ambos modelos:
+
+AUC-ROC en el conjunto de testeo: Árbol Básico: 0.7379 Árbol Optimizado: 0.7569 El árbol optimizado muestra un AUC-ROC superior, lo que sugiere una mejor capacidad para discriminar entre las clases (consumo y no consumo de alcohol).
 
 ```{r pressure, echo=FALSE}
 # Función para calcular métricas adicionales
@@ -631,6 +674,29 @@ if (sum(valid_indices_test) > 0) {
 }
 ```
 
+Métricas de Rendimiento:
+
+-   Precisión:
+
+    -   Árbol Básico: 0.6904
+
+    -   Árbol Optimizado: 0.6908
+
+-   Recall:
+
+    -   Árbol Básico: 0.6683
+
+    -   Árbol Optimizado: 0.7081
+
+-   F1-Score:
+
+    -   Árbol Básico: 0.6827
+
+    -   Árbol Optimizado: 0.6954
+
+-   Estas métricas reflejan que el árbol optimizado tiene un mejor balance entre precisión y recall, lo que se traduce en un F1-Score superior.
+Por lo tanto el ajuste de hiperparámetros ha permitido mejorar la capacidad predictiva del modelo, con un incremento notable en el AUC-ROC y un mejor desempeño en las métricas de precisión, recall y F1-Score. 
+
 # 6. Interpretación de resultados
 
 ## Comparar Visualmente los Árboles
@@ -643,7 +709,7 @@ rpart.plot(arbol_1, main = "Árbol Básico")
 rpart.plot(best_tree, main = "Árbol Optimizado")
 ```
 
-(ESCRIBIR)
+Al comparar el Árbol Básico con el Árbol Optimizado, se observan diferencias significativas en varios aspectos clave. El Árbol Optimizado es considerablemente más profundo y complejo, con un mayor número de nodos y divisiones, lo que le permite capturar una mayor variedad de patrones en los datos. Esto contrasta con el Árbol Básico, que tiene una menor profundidad y utiliza un conjunto más limitado de reglas de decisión, lo que lo hace más simple y fácil de interpretar, pero menos capaz de identificar relaciones sutiles entre las variables. Ambos árboles utilizan variables como gamma_GTP, age, y hemoglobin, pero el Árbol Optimizado incorpora un mayor número de variables en diferentes niveles del árbol, lo que le permite tomar decisiones más detalladas. Sin embargo, esta mayor capacidad predictiva del Árbol Optimizado viene acompañada de un mayor riesgo de sobreajuste, aunque como vimos anteriormente, no es el caso. Por otro lado, aunque el Árbol Básico es más robusto frente al sobreajuste, su simplicidad lleva a un rendimiento subóptimo al no capturar toda la complejidad de los datos.
 
 ## Importancia de las variables
 
@@ -682,7 +748,9 @@ ggplot(importance_opt_df, aes(x = reorder(Variable, Importance), y = Importance)
 
 ```
 
-(ESCRIBIR)
+El cambio en la importancia de las variables entre el árbol básico y el árbol optimizado refleja cómo la mayor profundidad, complejidad, y la capacidad del árbol optimizado para capturar relaciones no lineales influyen en la manera en que las variables contribuyen a la predicción. La optimización del árbol permite que variables que en el árbol básico eran menos relevantes, adquieran mayor importancia debido a su participación en divisiones más profundas y específicas del modelo, mientras que las variables más importantes en el árbol básico, como gamma_GTP y age, mantienen o incluso incrementan su importancia al ser utilizadas de manera más sofisticada.
+Además, otras variables como el HDL-colesterol, LDL-colesterol y las enzimas hepáticas SGOT/ALT y SGOT/AST han ganado relevancia en el modelo optimizado, lo que indica que el ajuste de hiperparámetros ha mejorado la capacidad del modelo para captar las complejas interacciones entre estas variables.
+
 
 # 7. Análisis del impacto de los valores faltantes
 
@@ -734,21 +802,24 @@ cat("Proporción de NAs en el conjunto de validación con 50% de reemplazo:", me
 cat("Proporción de NAs en el conjunto de testeo con 75% de reemplazo:", mean(is.na(test_data_75)), "\n")
 ```
 
+Trabajamos sobre los conjuntos de datos ya divididos en entrenamiento, validación y testeo, generando tres nuevos sets donde introdujimos valores faltantes (NAs) en el 20%, 50%, y 75% de las observaciones. Con estos nuevos sets, construimos y optimizamos árboles de decisión, comparando su rendimiento (AUC-ROC, precisión, recall, F1-Score) con el modelo optimizado del punto cinco. Analizamos cómo el aumento de valores faltantes afecta la capacidad predictiva del modelo, utilizando gráficos para visualizar las variaciones en las métricas de rendimiento.
+
+
 ## Árbol para el set de 20% de NAs
 
 ```{r pressure, echo=FALSE}
-best_hyperparameters_20 <- optimize_decision_tree(
+optimization_results_20 <- optimize_decision_tree(
   train_data = train_data_20, 
   val_data = val_data_20, 
-  formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
-  maxdepth_values = c(5, 10, 15, 20, 25, 30),
+  formula = DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
+  maxdepth_values = c(5, 6, 7, 8, 9, 10),
   minsplit_values = c(2, 5, 10, 15, 20),
-  minbucket_values = c(1, 3, 5, 7, 10, 15)
+  minbucket_values = c(10, 15, 20, 25)
 )
 
-best_combination_20 <- best_hyperparameters_20[1, ]
+best_combination_20 <- optimization_results_20$best_hyperparameters[1, ]
 
-best_tree_20 <- rpart(DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+best_tree_20 <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
                    data = train_data_20, method = "class",
                    control = rpart.control(minsplit = best_combination_20$minsplit,
                                            minbucket = best_combination_20$minbucket,
@@ -779,18 +850,18 @@ if (sum(valid_indices_test_20) > 0) {
 ## Árbol para el set de 50% de NAs
 
 ```{r pressure, echo=FALSE}
-best_hyperparameters_50 <- optimize_decision_tree(
+optimization_results_50 <- optimize_decision_tree(
   train_data = train_data_50, 
   val_data = val_data_50, 
-  formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
-  maxdepth_values = c(5, 10, 15, 20, 25, 30),
+  formula = DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
+  maxdepth_values = c(5, 6, 7, 8, 9, 10),
   minsplit_values = c(2, 5, 10, 15, 20),
-  minbucket_values = c(1, 3, 5, 7, 10, 15)
+  minbucket_values = c(10, 15, 20, 25)
 )
 
-best_combination_50 <- best_hyperparameters_50[1, ]
+best_combination_50 <- optimization_results_50$best_hyperparameters[1, ]
 
-best_tree_50 <- rpart(DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+best_tree_50 <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
                    data = train_data_50, method = "class",
                    control = rpart.control(minsplit = best_combination_50$minsplit,
                                            minbucket = best_combination_50$minbucket,
@@ -820,18 +891,18 @@ if (sum(valid_indices_test_50) > 0) {
 ## Árbol para el set de 75% de NAs
 
 ```{r pressure, echo=FALSE}
-best_hyperparameters_75 <- optimize_decision_tree(
+optimization_results_75 <- optimize_decision_tree(
   train_data = train_data_75, 
   val_data = val_data_75, 
-  formula = DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
-  maxdepth_values = c(5, 10, 15, 20, 25, 30),
+  formula = DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
+  maxdepth_values = c(5, 6, 7, 8, 9, 10),
   minsplit_values = c(2, 5, 10, 15, 20),
-  minbucket_values = c(1, 3, 5, 7, 10, 15)
+  minbucket_values = c(10, 15, 20, 25)
 )
 
-best_combination_75 <- best_hyperparameters_75[1, ]
+best_combination_75 <- optimization_results_75$best_hyperparameters[1, ]
 
-best_tree_75 <- rpart(DRK_YN ~ gamma_GTP + SGOT_AST + SGOT_ALT + BLDS + HDL_chole + LDL_chole + triglyceride + age + hemoglobin,
+best_tree_75 <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
                    data = train_data_75, method = "class",
                    control = rpart.control(minsplit = best_combination_75$minsplit,
                                            minbucket = best_combination_75$minbucket,
@@ -862,69 +933,28 @@ if (sum(valid_indices_test_75) > 0) {
 ## Comparación del rendimiento en testeo del mejor árbol obtenido con la performance obtenida por el árbol optimizado del punto 5
 
 ```{r pressure, echo=FALSE}
-# Función para calcular métricas adicionales
-calculate_metrics <- function(actual, predicted_probs, threshold = 0.5) {
-  predicted_classes <- ifelse(predicted_probs[, "Y"] >= threshold, "Y", "N")
-  
-  # Calcular matriz de confusión
-  confusion_matrix <- confusionMatrix(as.factor(predicted_classes), as.factor(actual))
-  
-  # Extraer métricas
-  accuracy <- confusion_matrix$overall["Accuracy"]
-  precision <- confusion_matrix$byClass["Pos Pred Value"]
-  recall <- confusion_matrix$byClass["Sensitivity"]
-  f1_score <- confusion_matrix$byClass["F1"]
-  
-  return(list(accuracy = accuracy, precision = precision, recall = recall, f1_score = f1_score, confusion_matrix = confusion_matrix))
-}
+# Calculo las metricas para cada caso
+performance_opt <- calculate_metrics(test_data_clean$DRK_YN, pred_prob_test_clean)
+performance_20 <- calculate_metrics(test_data_clean_20$DRK_YN, pred_prob_test_clean_20)
+performance_50 <- calculate_metrics(test_data_clean_50$DRK_YN, pred_prob_test_clean_50)
+performance_75 <- calculate_metrics(test_data_clean_75$DRK_YN, pred_prob_test_clean_75)
 
-# Función para evaluar un árbol en el conjunto de testeo
-evaluate_tree_performance <- function(best_tree, test_data, label) {
-  pred_prob_test <- predict(best_tree, newdata = test_data, type = "prob")
-  
-  valid_indices_test <- !is.na(pred_prob_test[, "Y"]) & !is.nan(pred_prob_test[, "Y"]) & !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
-  
-  if (sum(valid_indices_test) > 0) {
-    pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
-    test_data_clean <- test_data[valid_indices_test, ]
-    
-    # Calcular AUC-ROC
-    roc_curve_test <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
-    auc_test <- auc(roc_curve_test)
-    cat("AUC-ROC en el conjunto de testeo (", label, "):", auc_test, "\n")
-    
-    # Calcular métricas adicionales
-    metrics <- calculate_metrics(test_data_clean$DRK_YN, pred_prob_test_clean)
-    cat("Precisión (", label, "):", metrics$accuracy, "\n")
-    cat("Recall (", label, "):", metrics$recall, "\n")
-    cat("F1-Score (", label, "):", metrics$f1_score, "\n")
-    cat("Matriz de confusión (", label, "):\n")
-    print(metrics$confusion_matrix$table)
-    
-    return(list(auc = auc_test, metrics = metrics))
-  } else {
-    cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (", label, ").\n")
-    return(NULL)
-  }
-}
+# Crear un data frame con todas las métricas y los labels
+metrics_df <- data.frame(
+  NA_Percentage = rep(c("Optimizado", "20% NAs", "50% NAs", "75% NAs"), each = 4),
+  Metric = rep(c("AUC", "Precisión", "Recall", "F1-Score"), times = 4),
+  Value = c(
+    auc_test, performance_opt$accuracy, performance_opt$recall, performance_opt$f1_score,
+    auc_test_20, performance_20$accuracy, performance_20$recall, performance_20$f1_score,
+    auc_test_50, performance_50$accuracy, performance_50$recall, performance_50$f1_score,
+    auc_test_75, performance_75$accuracy, performance_75$recall, performance_75$f1_score
+  )
+)
 
-# Evaluar el árbol optimizado del punto 5 en el conjunto de testeo original
-performance_opt <- evaluate_tree_performance(best_tree, test_data, "árbol optimizado del punto 5")
-
-# Evaluar el mejor árbol con 20% de NAs
-performance_20 <- evaluate_tree_performance(best_tree_20, test_data_20, "20% NAs")
-
-# Evaluar el mejor árbol con 50% de NAs
-performance_50 <- evaluate_tree_performance(best_tree_50, test_data_50, "50% NAs")
-
-# Evaluar el mejor árbol con 75% de NAs
-performance_75 <- evaluate_tree_performance(best_tree_75, test_data_75, "75% NAs")
-
-# Comparación y análisis
-cat("\nComparación del AUC-ROC en el conjunto de testeo:\n")
-cat("AUC-ROC (árbol optimizado del punto 5):", performance_opt$auc, "\n")
-cat("AUC-ROC (20% NAs):", performance_20$auc, "\n")
-cat("AUC-ROC (50% NAs):", performance_50$auc, "\n")
-cat("AUC-ROC (75% NAs):", performance_75$auc, "\n")
-
+# Graficar la evolución de las métricas con líneas
+ggplot(metrics_df, aes(x = NA_Percentage, y = Value, color = Metric, group = Metric)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(title = "Evolución de Métricas con Diferentes Porcentajes de NAs", x = "Modelo", y = "Valor de la Métrica") +
+  theme_minimal()
 ```
