@@ -694,8 +694,7 @@ Métricas de Rendimiento:
 
     -   Árbol Optimizado: 0.6954
 
--   Estas métricas reflejan que el árbol optimizado tiene un mejor balance entre precisión y recall, lo que se traduce en un F1-Score superior.
-Por lo tanto el ajuste de hiperparámetros ha permitido mejorar la capacidad predictiva del modelo, con un incremento notable en el AUC-ROC y un mejor desempeño en las métricas de precisión, recall y F1-Score. 
+-   Estas métricas reflejan que el árbol optimizado tiene un mejor balance entre precisión y recall, lo que se traduce en un F1-Score superior. Por lo tanto el ajuste de hiperparámetros ha permitido mejorar la capacidad predictiva del modelo, con un incremento notable en el AUC-ROC y un mejor desempeño en las métricas de precisión, recall y F1-Score.
 
 # 6. Interpretación de resultados
 
@@ -741,16 +740,14 @@ ggplot(importance_basic_df, aes(x = reorder(Variable, Importance), y = Importanc
 
 # Graficar la importancia de las variables - Árbol Optimizado
 ggplot(importance_opt_df, aes(x = reorder(Variable, Importance), y = Importance)) +
-  geom_bar(stat = "identity", fill = "red") +
+  geom_bar(stat = "identity", fill = "lightblue") +
   coord_flip() +
   labs(title = "Importancia de las Variables - Árbol Optimizado", x = "Variable", y = "Importancia") +
   theme_minimal()
 
 ```
 
-El cambio en la importancia de las variables entre el árbol básico y el árbol optimizado refleja cómo la mayor profundidad, complejidad, y la capacidad del árbol optimizado para capturar relaciones no lineales influyen en la manera en que las variables contribuyen a la predicción. La optimización del árbol permite que variables que en el árbol básico eran menos relevantes, adquieran mayor importancia debido a su participación en divisiones más profundas y específicas del modelo, mientras que las variables más importantes en el árbol básico, como gamma_GTP y age, mantienen o incluso incrementan su importancia al ser utilizadas de manera más sofisticada.
-Además, otras variables como el HDL-colesterol, LDL-colesterol y las enzimas hepáticas SGOT/ALT y SGOT/AST han ganado relevancia en el modelo optimizado, lo que indica que el ajuste de hiperparámetros ha mejorado la capacidad del modelo para captar las complejas interacciones entre estas variables.
-
+El cambio en la importancia de las variables entre el árbol básico y el árbol optimizado refleja cómo la mayor profundidad, complejidad, y la capacidad del árbol optimizado para capturar relaciones no lineales influyen en la manera en que las variables contribuyen a la predicción. La optimización del árbol permite que variables que en el árbol básico eran menos relevantes, adquieran mayor importancia debido a su participación en divisiones más profundas y específicas del modelo, mientras que las variables más importantes en el árbol básico, como gamma_GTP y age, mantienen o incluso incrementan su importancia al ser utilizadas de manera más sofisticada. Además, otras variables como el HDL-colesterol, LDL-colesterol y las enzimas hepáticas SGOT/ALT y SGOT/AST han ganado relevancia en el modelo optimizado, lo que indica que el ajuste de hiperparámetros ha mejorado la capacidad del modelo para captar las complejas interacciones entre estas variables.
 
 # 7. Análisis del impacto de los valores faltantes
 
@@ -804,19 +801,21 @@ cat("Proporción de NAs en el conjunto de testeo con 75% de reemplazo:", mean(is
 
 Trabajamos sobre los conjuntos de datos ya divididos en entrenamiento, validación y testeo, generando tres nuevos sets donde introdujimos valores faltantes (NAs) en el 20%, 50%, y 75% de las observaciones. Con estos nuevos sets, construimos y optimizamos árboles de decisión, comparando su rendimiento (AUC-ROC, precisión, recall, F1-Score) con el modelo optimizado del punto cinco. Analizamos cómo el aumento de valores faltantes afecta la capacidad predictiva del modelo, utilizando gráficos para visualizar las variaciones en las métricas de rendimiento.
 
-
 ## Árbol para el set de 20% de NAs
 
 ```{r pressure, echo=FALSE}
+
+#creo el arbol optimizado con 20% de NAs
 optimization_results_20 <- optimize_decision_tree(
   train_data = train_data_20, 
   val_data = val_data_20, 
   formula = DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
   maxdepth_values = c(5, 6, 7, 8, 9, 10),
   minsplit_values = c(2, 5, 10, 15, 20),
-  minbucket_values = c(10, 15, 20, 25)
+  minbucket_values = c(10, 15, 20, 25, 30)
 )
 
+#buscamos la mejor combinación de hiperparametros para generarl el arbol
 best_combination_20 <- optimization_results_20$best_hyperparameters[1, ]
 
 best_tree_20 <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
@@ -850,6 +849,8 @@ if (sum(valid_indices_test_20) > 0) {
 ## Árbol para el set de 50% de NAs
 
 ```{r pressure, echo=FALSE}
+
+#creamos el arbol optimizado con 20% de NAs
 optimization_results_50 <- optimize_decision_tree(
   train_data = train_data_50, 
   val_data = val_data_50, 
@@ -859,6 +860,7 @@ optimization_results_50 <- optimize_decision_tree(
   minbucket_values = c(10, 15, 20, 25)
 )
 
+#buscamos la mejor combinación de hiperparametros para generarl el arbol
 best_combination_50 <- optimization_results_50$best_hyperparameters[1, ]
 
 best_tree_50 <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
@@ -891,6 +893,8 @@ if (sum(valid_indices_test_50) > 0) {
 ## Árbol para el set de 75% de NAs
 
 ```{r pressure, echo=FALSE}
+
+#creamos el arbol optimizado con 20% de NAs
 optimization_results_75 <- optimize_decision_tree(
   train_data = train_data_75, 
   val_data = val_data_75, 
@@ -899,7 +903,7 @@ optimization_results_75 <- optimize_decision_tree(
   minsplit_values = c(2, 5, 10, 15, 20),
   minbucket_values = c(10, 15, 20, 25)
 )
-
+#buscamos la mejor combinación de hiperparametros para generarl el arbol
 best_combination_75 <- optimization_results_75$best_hyperparameters[1, ]
 
 best_tree_75 <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
@@ -958,3 +962,47 @@ ggplot(metrics_df, aes(x = NA_Percentage, y = Value, color = Metric, group = Met
   labs(title = "Evolución de Métricas con Diferentes Porcentajes de NAs", x = "Modelo", y = "Valor de la Métrica") +
   theme_minimal()
 ```
+
+###Realizamos un analisis de las metricas para cada conjunto:
+
+**Conjunto de Datos con 20% de NAs:**
+
+-   AUC: Esta métrica es bastante alta, lo que indica que el modelo tiene una buena capacidad para distinguir entre las clases positivas y negativas. Con solo el 20% de NAs, el modelo aún tiene suficiente información para hacer predicciones robustas.
+
+<!-- -->
+
+-   F1-Score: Es relativamente alto, lo que sugiere un buen equilibrio entre precisión y recall. Con un menor porcentaje de datos faltantes, el modelo logra identificar correctamente tanto positivos como negativos sin inclinarse demasiado hacia falsos positivos o falsos negativos.
+
+-   Precisión: Moderadamente alta, lo que indica que la mayoría de las predicciones positivas realizadas por el modelo son correctas. Esto es esperable con solo el 20% de NAs.
+
+-   Recall: También es razonablemente alta, lo que significa que el modelo está identificando la mayoría de las verdaderas clases positivas. Con un bajo porcentaje de NAs, el modelo no pierde demasiada información importante.
+
+**Conjunto de Datos con 50% de NAs**
+
+-   AUC: Hay una disminución en el AUC en comparación con el conjunto con 20% de NAs, pero todavía se mantiene en un nivel moderado. Esto sugiere que la capacidad del modelo para distinguir entre las clases ha disminuido debido a la mayor cantidad de datos faltantes.
+
+<!-- -->
+
+-   F1-Score: Se reduce en comparación con el conjunto de 20% de NAs, lo que indica que el equilibrio entre precisión y recall se ha visto afectado. El modelo puede estar comenzando a producir más falsos positivos o negativos.
+
+-   Precisión: La precisión disminuye, lo que significa que hay más predicciones positivas incorrectas. Con el 50% de NAs, el modelo no es tan confiable en sus predicciones positivas.
+
+-   Recall: También disminuye, indicando que el modelo no está identificando tantos verdaderos positivos. La pérdida de datos afecta significativamente la capacidad del modelo para capturar todas las instancias positivas.
+
+**Conjunto de Datos con 75% de NAs**
+
+-   AUC: el AUC es notablemente baja, lo que indica que el modelo tiene una capacidad limitada para distinguir entre las clases. Con un 75% de NAs, el modelo pierde mucha información crítica, afectando gravemente su rendimiento.
+
+-   F1-Score: Es bajo, reflejando un mal equilibrio entre precisión y recall. Es probable que el modelo esté produciendo muchas predicciones incorrectas debido a la falta de datos suficientes.
+
+-   Precisión: La precisión es baja, lo que indica que muchas de las predicciones positivas realizadas por el modelo son incorrectas. El modelo tiene dificultades para hacer predicciones confiables con un alto porcentaje de datos faltantes.
+
+-   Recall: Es el más bajo entre todos los conjuntos de datos, lo que significa que el modelo no está capturando una gran cantidad de verdaderas clases positivas. Esto es un claro indicio de que la cantidad de datos faltantes está afectando gravemente su capacidad para identificar instancias positivas.El aumento tan grande en comparación al conjunto de datos de 50% de NAs se debe a que el threshold (umbral) es muy alto, dando lugar a una mayor cantidad de falsos positivos. Esto también explica la baja en la precision y por ende las demás metricas.
+
+El rendimiento del modelo se ve claramente afectado por el aumento de NAs en los datos, con una disminución notable en todas las métricas clave: AUC, F1-Score, Precisión y Recall. Esto indica que la falta de datos deteriora la capacidad del modelo para hacer predicciones precisas y equilibradas.
+
+Sin embargo, la optimización de los hiperparámetros logra recuperar y mejorar significativamente el rendimiento del modelo. En particular, se observa una mejora en la AUC y el F1-Score, lo que sugiere una mejor capacidad de discriminación entre clases y un balance más adecuado entre precisión y recall.
+
+Además, es crucial considerar el ajuste del threshold de clasificación, ya que este puede optimizar aún más el rendimiento en función de las necesidades específicas, especialmente en contextos donde los costos de los errores varían. En definitiva, la optimización y el ajuste del threshold permiten mitigar los efectos negativos de los datos faltantes, resultando en un modelo más robusto.
+
+##Conclusiones y discusión
