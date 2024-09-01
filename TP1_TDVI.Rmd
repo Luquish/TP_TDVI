@@ -62,22 +62,16 @@ El conjunto de datos contiene información sobre características demográficas 
 
 ## Variables Principales:
 
--   **sex**: Género de la persona (Male/Female).
 -   **age**: Edad de la persona.
--   **height**: Altura de la persona en centímetros.
--   **weight**: Peso de la persona en kilogramos.
 -   **waistline**: Circunferencia de la cintura en centímetros.
--   **sight_left / sight_right**: Agudeza visual en el ojo izquierdo/derecho.
--   **hear_left / hear_right**: Capacidad auditiva en el oído izquierdo/derecho.
 -   **SBP**: Presión arterial sistólica.
 -   **LDL_chole**: Niveles de colesterol LDL.
+-   **HDL_chole:** Niveles de colesterol HDL
 -   **triglyceride**: Niveles de triglicéridos.
 -   **hemoglobin**: Niveles de hemoglobina.
 -   **urine_protein**: Presencia de proteínas en la orina.
--   **serum_creatinine**: Niveles de creatinina en suero.
 -   **SGOT_AST / SGOT_ALT**: Enzimas hepáticas.
 -   **gamma_GTP**: Enzima hepática relacionada con el consumo de alcohol.
--   **SMK_stat_type_cd**: Código de estado de fumador.
 -   **DRK_YN**: Variable objetivo que indica si la persona consume alcohol o no (Yes/No).
 
 ## Problema a Resolver:
@@ -98,15 +92,16 @@ Además, los árboles de decisión manejan de manera efectiva los datos faltante
 
 ```{r}
 # Cargamos los datos
-fumadores = read.csv("data/smoking_driking_dataset_Ver01.csv", header = TRUE, sep = ",")
+# fumadores = read.csv("data/smoking_driking_dataset_Ver01.csv", header = TRUE, sep = ",")
+fumadores_50 = read.csv("reducido.csv", header = TRUE, sep = ",")
 ```
 
 ```{r, width=80}
 # Achicamos la informacion en terminos de observaciones
 set.seed(44512364)
-fumadores_50 <- fumadores[sample(nrow(fumadores), 50000), ]
-write.csv(fumadores_50, "data/reducido.csv", row.names = FALSE)
-remove(fumadores)
+# fumadores_50 <- fumadores[sample(nrow(fumadores), 50000), ]
+# write.csv(fumadores_50, "data/reducido.csv", row.names = FALSE)
+# remove(fumadores)
 
 # Modificamos las variables categoricas de numeros a palabras:
 
@@ -185,7 +180,7 @@ ggplot(fumadores_50, aes(x = as.factor(DRK_YN),
   theme(legend.position = "none")
 ```
 
-el boxplot graficado sugiere una asociación entre el consumo de alcohol y niveles más altos de Gamma-GTP, con una mayor variabilidad en los niveles entre aquellos que consumen alcohol.
+El boxplot graficado sugiere una asociación entre el consumo de alcohol y niveles más altos de Gamma-GTP, con una mayor variabilidad en los niveles entre aquellos que consumen alcohol.
 
 ## Box plot para SGOT/AST según el consumo de alcohol
 
@@ -227,7 +222,7 @@ ggplot(fumadores_50, aes(x = as.factor(DRK_YN), y = triglyceride,
 
 Este boxplot indica que el consumo de alcohol no parece tener un efecto notable en los niveles medianos o la variabilidad central de los triglicéridos. Sin embargo, se observa la presencia de varios outliers, especialmente en el extremo inferior, lo que sugiere que hay personas en ambos grupos con niveles de triglicéridos más bajos de lo esperado.
 
-En el análisis, se observa que las dos primeras variables (Gamma-GTP y SGOT/AST) presentan una relación con la variable categórica de consumo de alcohol. Entre ellas, Gamma-GTP muestra una asociación más fuerte en comparación con SGOT/AST. En contraste, el último gráfico revela que los niveles de triglicéridos son similares tanto en personas que consumen alcohol como en aquellas que no lo hacen. Esto sugiere que, a diferencia de Gamma-GTP y SGOT/AST, los triglicéridos no parecen estar relacionados directamente con el consumo de alcohol en nuestra muestra.
+En el análisis, se observa que las dos primeras variables (Gamma-GTP y SGOT/AST) presentan una relación con la variable categórica de consumo de alcohol. Entre ellas, Gamma-GTP muestra una asociación más fuerte en comparación con SGOT/AST. En contraste, el último gráfico revela que los niveles de triglicéridos son similares tanto en personas que consumen alcohol como en aquellas que no lo hacen. Esto sugiere que, a diferencia de Gamma-GTP y SGOT/AST, los triglicéridos no parecen estar relacionados directamente con el consumo de alcohol en nuestra muestra. Analizaremos su redundancia para el modelo con un analisis de mayor complejidad a partir de un arbol de decisión
 
 ### Características observadas en los datos
 
@@ -296,7 +291,7 @@ head(pred_prob)
 head(pred_class)
 ```
 
-Los resultados presentados muestran las predicciones del modelo de árbol de decisión en términos de probabilidades y clases para un conjunto de datos de prueba.Cada fila muestra la probabilidad de que un individuo no consuma alcohol (N) o consuma alcohol (Y). Por ejemplo, el primer individuo tiene una probabilidad de 0.7768888 de consumir alcohol y 0.2231112 de no consumir. Basado en las probabilidades, el modelo asigna una clase a cada individuo. Si la probabilidad de "Y" (consumo de alcohol) es mayor que la de "N", la clase predicha es "Y", y viceversa. Utilizaremos las metricas de performance para realizar un análisis de los resultados arrojados.
+Los resultados presentados muestran las predicciones del modelo de árbol de decisión en términos de probabilidades y clases para un conjunto de datos de prueba. Cada fila muestra la probabilidad de que un individuo no consuma alcohol (N) o consuma alcohol (Y). Por ejemplo, el primer individuo tiene una probabilidad de 0.7735849 de consumir alcohol y 0.2264151 de no consumir. Basado en las probabilidades, el modelo asigna una clase a cada individuo. Si la probabilidad de "Y" (consumo de alcohol) es mayor que la de "N", la clase predicha es "Y", y viceversa. Utilizaremos las metricas de performance para realizar un análisis de los resultados arrojados.
 
 ## Metricas de performance
 
@@ -324,14 +319,6 @@ ggplot(matriz_confusion_df, aes(x = Actual, y = Predicted, fill = value)) +
 
 La matriz de confusión muestra el rendimiento del modelo de clasificación al predecir si las personas consumen alcohol o no. Aquí está el análisis de la matriz:
 
--   **Verdaderos Positivos (Y-Y):** El modelo identificó correctamente a 2680 personas que consumen alcohol.
-
--   **Verdaderos Negativos (N-N)**: El modelo identificó correctamente a 2498 personas que no consumen alcohol.
-
--   **Falsos Positivos (N-Y):** 1082 personas fueron incorrectamente clasificadas como consumidoras de alcohol cuando en realidad no lo son.
-
--   **Falsos Negativos (Y-N)**: 1240 personas que consumen alcohol fueron incorrectamente clasificadas como no consumidoras.
-
 ### Accuracy
 
 ```{r, width=80}
@@ -354,9 +341,9 @@ cat("Precision: ", precision, "\n")
 cat("Recall: ", recall, "\n")
 ```
 
--   El modelo tiene una precisión del 0.6686642, lo que indica que de todas las veces que el modelo predijo que una observación era positiva, aproximadamente el **66.86%** de esas predicciones eran correctas.
+-   El modelo tiene una precisión del 0.6979381, lo que indica que de todas las veces que el modelo predijo que una observación era positiva, aproximadamente el **69.79%** de esas predicciones eran correctas.
 
--   El modelo tiene un recall del 0.7243711, lo que significa que de todas las observación que realmente son positivas, el modelo identificó correctamente aproximadamente el **72.43%** de ellas.
+-   El modelo tiene un recall del 0.7128192, lo que significa que de todas las observación que realmente son positivas, el modelo identificó correctamente aproximadamente el **71.28%** de ellas.
 
 ### F1-Score
 
@@ -367,7 +354,7 @@ cat("F1-Score: ", f1_score, "\n")
 
 ```
 
--   El F1-score es una métrica que combina la precisión (precision) y la recuperación (recall) en una sola medida, proporcionando una manera de evaluar el equilibrio entre estos dos aspectos en un modelo de clasificación. Un F1-score de 0.695 indica que el modelo tiene un rendimiento moderado en términos de precisión y recuperación. lo que es coherente con el inciso de Recall y precision.
+-   El F1-score es una métrica que combina la precisión (precision) y la recuperación (recall) en una sola medida, proporcionando una manera de evaluar el equilibrio entre estos dos aspectos en un modelo de clasificación. Un F1-score de 0.705 indica que el modelo tiene un rendimiento moderado en términos de precisión y recuperación. lo que es coherente con el inciso de Recall y precision.
 
 ```{r, width=80}
 # Crear un data frame con las métricas
@@ -389,14 +376,11 @@ ggplot(metrics_df, aes(x = Metric, y = Value, fill = Value)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-El F1-score de 0.696 y la accuracy de 0.69 muestran que el modelo tiene un desempeño moderado, con un buen equilibrio entre precisión y recuperación Igualmente deja un margén para la mejora del modelo dado la cantidad de flasos positivos y falsos negativos.
+El F1-score de 0.70 y la accuracy de 0.69 muestran que el modelo tiene un desempeño moderado, con un buen equilibrio entre precisión y recuperación Igualmente deja un margén para la mejora del modelo dado la cantidad de flasos positivos y falsos negativos.
 
 ### AUC-ROC
 
 ```{r, width=80}
-library(ggplot2)
-library(dplyr)
-
 # Ordenar los datos según las probabilidades predichas de mayor a menor
 roc_data <- test_data %>%
   mutate(predicted_prob = pred_prob[, "Y"]) %>%
@@ -446,11 +430,11 @@ ggplot(roc_data, aes(x = FPR, y = TPR)) +
 
 ```
 
-La curva ROC es una representación gráfica que muestra el rendimiento del modelo de clasificación binaria a través de todos los posibles umbrales de decisión. En el eje Y se encuentra la tasa de verdaderos positivos (Sensibilidad), que mide la proporción de casos positivos correctamente identificados por el modelo. En el eje X se encuentra la tasa de falsos positivos (1 - Especificidad), que mide la proporción de casos negativos que fueron incorrectamente clasificados como positivos. En este gráfico, la curva se acerca al borde superior izquierdo, lo que indica un buen rendimiento del modelo. Sin embargo, la curva no está completamente cerca del borde lo que sugiere que hay margen de mejora. El AUC-ROC es un valor numérico que mide el área bajo la curva ROC. Este valor varía entre 0.5 y 1.0. Con un valor de **0.7326349**, el modelo tiene una capacidad razonable para distinguir entre las personas que consumen alcohol y las que no.
+La curva ROC es una representación gráfica que muestra el rendimiento del modelo de clasificación binaria a través de todos los posibles umbrales de decisión. En el eje Y se encuentra la tasa de verdaderos positivos (Sensibilidad), que mide la proporción de casos positivos correctamente identificados por el modelo. En el eje X se encuentra la tasa de falsos positivos (1 - Especificidad), que mide la proporción de casos negativos que fueron incorrectamente clasificados como positivos. En este gráfico, la curva se acerca al borde superior izquierdo, lo que indica un buen rendimiento del modelo. Sin embargo, la curva no está completamente cerca del borde lo que sugiere que hay margen de mejora. El AUC-ROC es un valor numérico que mide el área bajo la curva ROC. Este valor varía entre 0.5 y 1.0. Con un valor de **0.746**, el modelo tiene una capacidad razonable para distinguir entre las personas que consumen alcohol y las que no.
 
 ## Interpretamos los resultados obtenidos
 
-El árbol de decisión proporciona un rendimiento aceptable, pero con áreas de mejora. El AUC-ROC de 0.7318 sugiere que el modelo tiene un poder de discriminación razonable, pero la matriz de confusión y las métricas de precisión, recall y F1-score muestran que el modelo esta trabajando con una cantidad notable de errores en la clasificación. Probaremos en los proximos puntos, ajustando los hiperparametros si obtenemos una mejora del modelo en cuestión.
+El árbol de decisión proporciona un rendimiento aceptable, pero con áreas de mejora. El AUC-ROC de 0.746 sugiere que el modelo tiene un poder de discriminación razonable, pero la matriz de confusión y las métricas de precisión, recall y F1-score muestran que el modelo esta trabajando con una cantidad notable de errores en la clasificación. Probaremos en los proximos puntos, ajustando los hiperparametros si obtenemos una mejora del modelo en cuestión.
 
 # 5. Optimización del modelo
 
@@ -587,7 +571,8 @@ Observando los gráficos y los resultados, podemos sacar la conclusion de que el
 ```{r, width=80}
 best_combination <- optimization_results$best_hyperparameters[1, ]
 
-best_tree <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole + triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
+best_tree <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_chole +
+                     triglyceride + hemoglobin + SGOT_AST + SGOT_ALT + BLDS,
                    data = train_data, method = "class",
                    control = rpart.control(minsplit = best_combination$minsplit,
                                            minbucket = best_combination$minbucket,
@@ -597,21 +582,19 @@ best_tree <- rpart(DRK_YN ~ age + gamma_GTP + HDL_chole + waistline + SBP + LDL_
 
 pred_prob_test <- predict(best_tree, newdata = test_data, type = "prob")
 
-valid_indices_test <- !is.na(pred_prob_test[, "Y"]) & !is.nan(pred_prob_test[, "Y"]) & !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
+valid_indices_test <- !is.na(pred_prob_test[, "Y"]) &
+  !is.nan(pred_prob_test[, "Y"]) &
+  !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
 
 # Calcular el AUC-ROC en el conjunto de testeo
-if (sum(valid_indices_test) > 0) {
-  pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
-  test_data_clean <- test_data[valid_indices_test, ]
-  
-  roc_curve_test <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
-  auc_test <- auc(roc_curve_test)
-  
-  # Mostrar el valor de AUC-ROC en el conjunto de testeo
-  cat("AUC-ROC test:", auc_test, "\n")
-} else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo.\n")
-}
+pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
+test_data_clean <- test_data[valid_indices_test, ]
+
+roc_curve_test <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
+auc_test <- auc(roc_curve_test)
+
+# Mostrar el valor de AUC-ROC en el conjunto de testeo
+cat("AUC-ROC test:", auc_test, "\n")
 ```
 
 ## Comparación
@@ -626,18 +609,14 @@ valid_indices_test_1 <- !is.na(pred_prob_test_1[, "Y"]) &
   !is.nan(pred_prob_test_1[, "Y"]) &
   !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
 
-if (sum(valid_indices_test_1) > 0) {
-  pred_prob_test_clean_1 <- pred_prob_test_1[valid_indices_test_1, ]
-  test_data_clean_1 <- test_data[valid_indices_test_1, ]
-  
-  roc_curve_test_1 <- suppressMessages(roc(test_data_clean_1$DRK_YN,
-                                           pred_prob_test_clean_1[, "Y"]))
-  auc_test_1 <- auc(roc_curve_test_1)
-  
-  cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
-  } else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol básico).\n")
-  }
+pred_prob_test_clean_1 <- pred_prob_test_1[valid_indices_test_1, ]
+test_data_clean_1 <- test_data[valid_indices_test_1, ]
+
+roc_curve_test_1 <- suppressMessages(roc(test_data_clean_1$DRK_YN,
+                                         pred_prob_test_clean_1[, "Y"]))
+auc_test_1 <- auc(roc_curve_test_1)
+
+cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
 
 cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test, "\n")
 
@@ -677,72 +656,42 @@ valid_indices_test_1 <- !is.na(pred_prob_test_1[, "Y"]) &
   !is.nan(pred_prob_test_1[, "Y"]) &
   !is.na(test_data$DRK_YN) & !is.nan(test_data$DRK_YN)
 
-if (sum(valid_indices_test_1) > 0) {
-  pred_prob_test_clean_1 <- pred_prob_test_1[valid_indices_test_1, ]
-  test_data_clean_1 <- test_data[valid_indices_test_1, ]
-  
-  # Calcular AUC-ROC
-  roc_curve_test_1 <- suppressMessages(roc(test_data_clean_1$DRK_YN,
-                                           pred_prob_test_clean_1[, "Y"]))
-  auc_test_1 <- auc(roc_curve_test_1)
-  cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
-  
-  # Calcular métricas adicionales
-  metrics_basic <- calculate_metrics(test_data_clean_1$DRK_YN, pred_prob_test_clean_1)
-  cat("Precisión (árbol básico):", metrics_basic$accuracy, "\n")
-  cat("Recall (árbol básico):", metrics_basic$recall, "\n")
-  cat("F1-Score (árbol básico):", metrics_basic$f1_score, "\n")
-  cat("Matriz de confusión (árbol básico):\n")
-  print(metrics_basic$confusion_matrix$table)
-  
-} else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol básico).\n")
-}
+pred_prob_test_clean_1 <- pred_prob_test_1[valid_indices_test_1, ]
+test_data_clean_1 <- test_data[valid_indices_test_1, ]
+
+# Calcular AUC-ROC
+roc_curve_test_1 <- suppressMessages(roc(test_data_clean_1$DRK_YN,
+                                         pred_prob_test_clean_1[, "Y"]))
+auc_test_1 <- auc(roc_curve_test_1)
+cat("AUC-ROC en el conjunto de testeo (árbol básico):", auc_test_1, "\n")
+
+# Calcular métricas adicionales
+metrics_basic <- calculate_metrics(test_data_clean_1$DRK_YN, pred_prob_test_clean_1)
+cat("Precisión (árbol básico):", metrics_basic$accuracy, "\n")
+cat("Recall (árbol básico):", metrics_basic$recall, "\n")
+cat("F1-Score (árbol básico):", metrics_basic$f1_score, "\n")
+cat("Matriz de confusión (árbol básico):\n")
+print(metrics_basic$confusion_matrix$table)
 
 # Calcular AUC-ROC y otras métricas para el árbol optimizado
-if (sum(valid_indices_test) > 0) {
-  pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
-  test_data_clean <- test_data[valid_indices_test, ]
-  
-  # Calcular AUC-ROC
-  roc_curve_test_opt <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
-  auc_test_opt <- auc(roc_curve_test_opt)
-  cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test_opt, "\n")
-  
-  # Calcular métricas adicionales
-  metrics_opt <- calculate_metrics(test_data_clean$DRK_YN, pred_prob_test_clean)
-  cat("Precisión (árbol optimizado):", metrics_opt$accuracy, "\n")
-  cat("Recall (árbol optimizado):", metrics_opt$recall, "\n")
-  cat("F1-Score (árbol optimizado):", metrics_opt$f1_score, "\n")
-  cat("Matriz de confusión (árbol optimizado):\n")
-  print(metrics_opt$confusion_matrix$table)
-  
-} else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (árbol optimizado).\n")
-}
+pred_prob_test_clean <- pred_prob_test[valid_indices_test, ]
+test_data_clean <- test_data[valid_indices_test, ]
+
+# Calcular AUC-ROC
+roc_curve_test_opt <- suppressMessages(roc(test_data_clean$DRK_YN, pred_prob_test_clean[, "Y"]))
+auc_test_opt <- auc(roc_curve_test_opt)
+cat("AUC-ROC en el conjunto de testeo (árbol optimizado):", auc_test_opt, "\n")
+
+# Calcular métricas adicionales
+metrics_opt <- calculate_metrics(test_data_clean$DRK_YN, pred_prob_test_clean)
+cat("Precisión (árbol optimizado):", metrics_opt$accuracy, "\n")
+cat("Recall (árbol optimizado):", metrics_opt$recall, "\n")
+cat("F1-Score (árbol optimizado):", metrics_opt$f1_score, "\n")
+cat("Matriz de confusión (árbol optimizado):\n")
+print(metrics_opt$confusion_matrix$table)
 ```
 
-Métricas de Rendimiento:
-
--   Precisión:
-
-    -   Árbol Básico: 0.6904
-
-    -   Árbol Optimizado: 0.6908
-
--   Recall:
-
-    -   Árbol Básico: 0.6683
-
-    -   Árbol Optimizado: 0.7081
-
--   F1-Score:
-
-    -   Árbol Básico: 0.6827
-
-    -   Árbol Optimizado: 0.6954
-
--   Estas métricas reflejan que el árbol optimizado tiene un mejor balance entre precisión y recall, lo que se traduce en un F1-Score superior. Por lo tanto el ajuste de hiperparámetros ha permitido mejorar la capacidad predictiva del modelo, con un incremento notable en el AUC-ROC y un mejor desempeño en las métricas de precisión, recall y F1-Score.
+Estas métricas reflejan que el árbol optimizado tiene un mejor balance entre precisión y recall, lo que se traduce en un F1-Score superior, aunque la precisión haya dismunido. Por lo tanto el ajuste de hiperparámetros ha permitido mejorar la capacidad predictiva del modelo, con un incremento en el AUC-ROC.
 
 # 6. Interpretación de resultados
 
@@ -894,19 +843,17 @@ valid_indices_test_20 <- !is.na(pred_prob_test_20[, "Y"]) &
   !is.nan(test_data_20$DRK_YN)
 
 # Calcular el AUC-ROC en el conjunto de testeo
-if (sum(valid_indices_test_20) > 0) {
-  pred_prob_test_clean_20 <- pred_prob_test_20[valid_indices_test_20, ]
-  test_data_clean_20 <- test_data_20[valid_indices_test_20, ]
-  
-  roc_curve_test_20 <- suppressMessages(roc(test_data_clean_20$DRK_YN,
-                                            pred_prob_test_clean_20[, "Y"]))
-  auc_test_20 <- auc(roc_curve_test_20)
-  
-  # Mostrar el valor de AUC-ROC en el conjunto de testeo
-  cat("AUC-ROC test:", auc_test_20, "\n")
-} else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo.\n")
-}
+
+pred_prob_test_clean_20 <- pred_prob_test_20[valid_indices_test_20, ]
+test_data_clean_20 <- test_data_20[valid_indices_test_20, ]
+
+roc_curve_test_20 <- suppressMessages(roc(test_data_clean_20$DRK_YN,
+                                          pred_prob_test_clean_20[, "Y"]))
+auc_test_20 <- auc(roc_curve_test_20)
+
+# Mostrar el valor de AUC-ROC en el conjunto de testeo
+cat("AUC-ROC test:", auc_test_20, "\n")
+
 
 ```
 
@@ -944,19 +891,17 @@ valid_indices_test_50 <- !is.na(pred_prob_test_50[, "Y"]) &
   !is.nan(test_data_50$DRK_YN)
 
 # Calcular el AUC-ROC en el conjunto de testeo
-if (sum(valid_indices_test_50) > 0) {
-  pred_prob_test_clean_50 <- pred_prob_test_50[valid_indices_test_50, ]
-  test_data_clean_50 <- test_data_50[valid_indices_test_50, ]
-  
-  roc_curve_test_50 <- suppressMessages(roc(test_data_clean_50$DRK_YN,
-                                            pred_prob_test_clean_50[, "Y"]))
-  auc_test_50 <- auc(roc_curve_test_50)
-  
-  # Mostrar el valor de AUC-ROC en el conjunto de testeo
-  cat("AUC-ROC en el conjunto de testeo (50% NAs):", auc_test_50, "\n")
-} else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (50% NAs).\n")
-}
+
+pred_prob_test_clean_50 <- pred_prob_test_50[valid_indices_test_50, ]
+test_data_clean_50 <- test_data_50[valid_indices_test_50, ]
+
+roc_curve_test_50 <- suppressMessages(roc(test_data_clean_50$DRK_YN,
+                                          pred_prob_test_clean_50[, "Y"]))
+auc_test_50 <- auc(roc_curve_test_50)
+
+# Mostrar el valor de AUC-ROC en el conjunto de testeo
+cat("AUC-ROC en el conjunto de testeo (50% NAs):", auc_test_50, "\n")
+
 
 ```
 
@@ -993,19 +938,15 @@ valid_indices_test_75 <- !is.na(pred_prob_test_75[, "Y"]) &
   !is.nan(test_data_75$DRK_YN)
 
 # Calcular el AUC-ROC en el conjunto de testeo
-if (sum(valid_indices_test_75) > 0) {
-  pred_prob_test_clean_75 <- pred_prob_test_75[valid_indices_test_75, ]
-  test_data_clean_75 <- test_data_75[valid_indices_test_75, ]
-  
-  roc_curve_test_75 <- suppressMessages(roc(test_data_clean_75$DRK_YN,
-                                            pred_prob_test_clean_75[, "Y"]))
-  auc_test_75 <- auc(roc_curve_test_75)
-  
-  # Mostrar el valor de AUC-ROC en el conjunto de testeo
-  cat("AUC-ROC en el conjunto de testeo (75% NAs):", auc_test_75, "\n")
-} else {
-  cat("No hay suficientes datos válidos para calcular el AUC-ROC en el conjunto de testeo (75% NAs).\n")
-}
+pred_prob_test_clean_75 <- pred_prob_test_75[valid_indices_test_75, ]
+test_data_clean_75 <- test_data_75[valid_indices_test_75, ]
+
+roc_curve_test_75 <- suppressMessages(roc(test_data_clean_75$DRK_YN,
+                                          pred_prob_test_clean_75[, "Y"]))
+auc_test_75 <- auc(roc_curve_test_75)
+
+# Mostrar el valor de AUC-ROC en el conjunto de testeo
+cat("AUC-ROC en el conjunto de testeo (75% NAs):", auc_test_75, "\n")
 
 
 ```
@@ -1040,43 +981,39 @@ ggplot(metrics_df, aes(x = NA_Percentage, y = Value, color = Metric, group = Met
        y = "Valor de la Métrica") + theme_minimal()
 ```
 
-###Realizamos un analisis de las metricas para cada conjunto:
+### Realizamos un analisis de las metricas para cada conjunto:
 
 **Conjunto de Datos con 20% de NAs:**
 
--   AUC: Esta métrica es bastante alta, lo que indica que el modelo tiene una buena capacidad para distinguir entre las clases positivas y negativas. Con solo el 20% de NAs, el modelo aún tiene suficiente información para hacer predicciones robustas.
+-   **AUC:** Esta métrica es bastante alta, lo que indica que el modelo tiene una buena capacidad para distinguir entre las clases positivas y negativas. Con solo el 20% de NAs, el modelo aún tiene suficiente información para hacer predicciones robustas.
 
-<!-- -->
+-   **F1-Score:** Es relativamente alto, lo que sugiere un buen equilibrio entre precisión y recall. Con un menor porcentaje de datos faltantes, el modelo logra identificar correctamente tanto positivos como negativos sin inclinarse demasiado hacia falsos positivos o falsos negativos.
 
--   F1-Score: Es relativamente alto, lo que sugiere un buen equilibrio entre precisión y recall. Con un menor porcentaje de datos faltantes, el modelo logra identificar correctamente tanto positivos como negativos sin inclinarse demasiado hacia falsos positivos o falsos negativos.
+-   **Precisión:** Moderadamente alta, lo que indica que la mayoría de las predicciones positivas realizadas por el modelo son correctas. Esto es esperable con solo el 20% de NAs.
 
--   Precisión: Moderadamente alta, lo que indica que la mayoría de las predicciones positivas realizadas por el modelo son correctas. Esto es esperable con solo el 20% de NAs.
-
--   Recall: También es razonablemente alta, lo que significa que el modelo está identificando la mayoría de las verdaderas clases positivas. Con un bajo porcentaje de NAs, el modelo no pierde demasiada información importante.
+-   **Recall:** También es razonablemente alta, lo que significa que el modelo está identificando la mayoría de las verdaderas clases positivas. Con un bajo porcentaje de NAs, el modelo no pierde demasiada información importante.
 
 **Conjunto de Datos con 50% de NAs**
 
--   AUC: Hay una disminución en el AUC en comparación con el conjunto con 20% de NAs, pero todavía se mantiene en un nivel moderado. Esto sugiere que la capacidad del modelo para distinguir entre las clases ha disminuido debido a la mayor cantidad de datos faltantes.
+-   **AUC:** Hay una disminución en el AUC en comparación con el conjunto con 20% de NAs, pero todavía se mantiene en un nivel moderado. Esto sugiere que la capacidad del modelo para distinguir entre las clases ha disminuido debido a la mayor cantidad de datos faltantes.
 
-<!-- -->
+-   **F1-Score:** Se reduce en comparación con el conjunto de 20% de NAs, lo que indica que el equilibrio entre precisión y recall se ha visto afectado. El modelo puede estar comenzando a producir más falsos positivos o negativos.
 
--   F1-Score: Se reduce en comparación con el conjunto de 20% de NAs, lo que indica que el equilibrio entre precisión y recall se ha visto afectado. El modelo puede estar comenzando a producir más falsos positivos o negativos.
+-   **Precisión:** La precisión disminuye, lo que significa que hay más predicciones positivas incorrectas. Con el 50% de NAs, el modelo no es tan confiable en sus predicciones positivas.
 
--   Precisión: La precisión disminuye, lo que significa que hay más predicciones positivas incorrectas. Con el 50% de NAs, el modelo no es tan confiable en sus predicciones positivas.
-
--   Recall: También disminuye, indicando que el modelo no está identificando tantos verdaderos positivos. La pérdida de datos afecta significativamente la capacidad del modelo para capturar todas las instancias positivas.
+-   **Recall:** También disminuye, indicando que el modelo no está identificando tantos verdaderos positivos. La pérdida de datos afecta significativamente la capacidad del modelo para capturar todas las instancias positivas.
 
 **Conjunto de Datos con 75% de NAs**
 
--   AUC: el AUC es notablemente baja, lo que indica que el modelo tiene una capacidad limitada para distinguir entre las clases. Con un 75% de NAs, el modelo pierde mucha información crítica, afectando gravemente su rendimiento.
+-   **AUC:** el AUC es notablemente baja, lo que indica que el modelo tiene una capacidad limitada para distinguir entre las clases. Con un 75% de NAs, el modelo pierde mucha información crítica, afectando gravemente su rendimiento.
 
--   F1-Score: Es bajo, reflejando un mal equilibrio entre precisión y recall. Es probable que el modelo esté produciendo muchas predicciones incorrectas debido a la falta de datos suficientes.
+-   **F1-Score:** Es bajo, reflejando un mal equilibrio entre precisión y recall. Es probable que el modelo esté produciendo muchas predicciones incorrectas debido a la falta de datos suficientes.
 
--   Precisión: La precisión es baja, lo que indica que muchas de las predicciones positivas realizadas por el modelo son incorrectas. El modelo tiene dificultades para hacer predicciones confiables con un alto porcentaje de datos faltantes.
+-   **Precisión:** La precisión es baja, lo que indica que muchas de las predicciones positivas realizadas por el modelo son incorrectas. El modelo tiene dificultades para hacer predicciones confiables con un alto porcentaje de datos faltantes.
 
--   Recall: Es el más bajo entre todos los conjuntos de datos, lo que significa que el modelo no está capturando una gran cantidad de verdaderas clases positivas. Esto es un claro indicio de que la cantidad de datos faltantes está afectando gravemente su capacidad para identificar instancias positivas.El aumento tan grande en comparación al conjunto de datos de 50% de NAs se debe a que el threshold (umbral) es muy alto, dando lugar a una mayor cantidad de falsos positivos. Esto también explica la baja en la precision y por ende las demás metricas.
+-   **Recall:** Es el más bajo entre todos los conjuntos de datos, lo que significa que el modelo no está capturando una gran cantidad de verdaderas clases positivas. Esto es un claro indicio de que la cantidad de datos faltantes está afectando gravemente su capacidad para identificar instancias positivas. El aumento tan grande en comparación al conjunto de datos de 50% de NAs se debe a que el threshold (umbral) es muy alto, dando lugar a una mayor cantidad de falsos positivos. Esto también explica la baja en la precision y por ende las demás metricas.
 
-El rendimiento del modelo se ve claramente afectado por el aumento de NAs en los datos, con una disminución notable en todas las métricas clave: AUC, F1-Score, Precisión y Recall. Esto indica que la falta de datos deteriora la capacidad del modelo para hacer predicciones precisas y equilibradas.
+El rendimiento del modelo se ve claramente afectado por el aumento de NAs en los datos, con una disminución notable en todas las métricas que estamos analizando. Esto indica que la falta de datos deteriora la capacidad del modelo para hacer predicciones precisas y equilibradas.
 
 Sin embargo, la optimización de los hiperparámetros logra recuperar y mejorar significativamente el rendimiento del modelo. En particular, se observa una mejora en la AUC y el F1-Score, lo que sugiere una mejor capacidad de discriminación entre clases y un balance más adecuado entre precisión y recall.
 
